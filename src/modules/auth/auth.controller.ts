@@ -1,13 +1,30 @@
-import { Controller, Post, Body, Get, Req, UseGuards, Res } from '@nestjs/common';
+import { Controller, Post, Body, Get, Req, UseGuards, Res, Patch } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthGuard } from '@nestjs/passport';
 import express from 'express';
+import { CompleteRegisterUserDto } from './dto/complete-register-user.dto';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { CreateProviderDto } from '../providers/dto/create-provider.dto';
 
 // Controlador de autenticación.
 // Maneja registro, login y autenticación con Google para usuarios y proveedores.
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+
+
+  // Inicia el flujo de autenticación con Google para usuarios.
+  // Redirige al usuario al formulario de inicio de sesión de Google.
+  @Get('google/user')
+  @UseGuards(AuthGuard('google-user'))
+  async googleUserLogin() {}
+
+  @Patch('complete-register-user')
+  @UseGuards(JwtAuthGuard)
+  async completeRegisterUser(@Req() req, @Body() body: CompleteRegisterUserDto) {
+    const userId = req.user.id; // viene del token JWT
+    return this.authService.completeRegisterUser(userId, body);
+  }
 
   // Registra un nuevo usuario con email y contraseña.
   @Post('register/user')
@@ -17,8 +34,8 @@ export class AuthController {
 
   // Registra un nuevo proveedor con email y contraseña.
   @Post('register/provider')
-  registerProvider(@Body() body: any) {
-    return this.authService.registerProvider(body);
+  async registerProvider(@Body() dto: CreateProviderDto) {
+    return this.authService.registerProvider(dto);
   }
 
   // Inicia sesión como usuario.
@@ -29,18 +46,11 @@ export class AuthController {
     return this.authService.loginUser(body.email, body.password);
   }
 
-  // Inicia sesión como proveedor.
-  // Similar al login de usuario, pero consulta la tabla de proveedores.
+  // Login tradicional de proveedor
   @Post('login/provider')
-  loginProvider(@Body() body: { email: string; password: string }) {
+  async loginProvider(@Body() body: { email: string; password: string }) {
     return this.authService.loginProvider(body.email, body.password);
   }
-
-  // Inicia el flujo de autenticación con Google para usuarios.
-  // Redirige al usuario al formulario de inicio de sesión de Google.
-  @Get('google/user')
-  @UseGuards(AuthGuard('google-user'))
-  async googleUserLogin() {}
 
   // Callback de Google tras autenticación del usuario.
   // Google redirige a esta ruta una vez el usuario ha iniciado sesión.

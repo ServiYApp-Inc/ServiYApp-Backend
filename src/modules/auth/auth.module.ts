@@ -1,13 +1,13 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { AuthController } from './auth.controller'; 
 import { UsersModule } from '../users/users.module';
-import { ProvidersModule } from '../providers/providers.module';
 import { GoogleProviderStrategy } from './strategies/google-provider.strategy';
 import { GoogleUserStrategy } from './strategies/google-user.strategy';
+import { ProvidersModule } from '../providers/providers.module';
 
 // Módulo de autenticación.
 // Centraliza la configuración de JWT, las estrategias de autenticación
@@ -26,7 +26,7 @@ import { GoogleUserStrategy } from './strategies/google-user.strategy';
 
     // Módulos de usuarios y proveedores, necesarios para las operaciones de autenticación.
     UsersModule,
-    ProvidersModule,
+    forwardRef(() => ProvidersModule),
   ],
 
   // Controladores asociados al módulo de autenticación.

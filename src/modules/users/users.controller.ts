@@ -74,7 +74,6 @@ export class UsersController {
 
     // Evitar que cualquiera (ni admin) cambie email manualmente (opcional)
     delete safeData.email;
-    delete safeData.isCompleted;
 
     const updatedUser = await this.usersService.update(id, safeData);
 
@@ -84,9 +83,8 @@ export class UsersController {
     };
   }
 
-
   // Completar registro tras autenticación con Google.
-  // Permite completar datos faltantes y marcar el perfil como completo.
+  // Cambia el estado del usuario de INCOMPLETE → ACTIVE.
   @Patch('complete/:id')
   @Roles(Role.User, Role.Admin)
   async completeProfile(
@@ -95,14 +93,16 @@ export class UsersController {
     @Req() req,
   ) {
     const currentUser = req.user;
+
+    // Solo el propio usuario o el admin pueden completar su perfil
     if (currentUser.role !== Role.Admin && currentUser.id !== id)
       throw new ForbiddenException('No tienes permiso para completar este perfil');
 
-    const { email, role, isCompleted, ...safeData } = dto as any;
+    const { email, role, ...safeData } = dto as any;
 
     const updatedUser = await this.usersService.update(id, {
       ...safeData,
-      isCompleted: true,
+      status: UserStatus.ACTIVE, // 🔥 cambia el estado
     });
 
     return {
@@ -126,7 +126,6 @@ export class UsersController {
 
     return this.usersService.remove(id);
   }
-
   
   // Reactivar un usuario (solo el propio usuario o un administrador)
   @Patch(':id/reactivate')
@@ -134,10 +133,18 @@ export class UsersController {
   async reactivate(@Param('id') id: string, @Req() req) {
     const currentUser = req.user;
 
+    const userToReactivate = await this.usersService.findOne(id);
+
+    // Si el usuario está suspendido → no permitir reactivación
+    if (userToReactivate.status === UserStatus.SUSPENDED) {
+      throw new ForbiddenException('No puedes reactivar una cuenta suspendida.');
+    }
+
+    // Solo el propio usuario o el admin pueden hacerlo
     if (currentUser.role !== Role.Admin && currentUser.id !== id) {
       throw new ForbiddenException('No tienes permiso para reactivar esta cuenta');
     }
-    
+
     return this.usersService.reactivate(id);
   }
 

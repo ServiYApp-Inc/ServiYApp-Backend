@@ -17,22 +17,46 @@ import { Roles } from 'src/modules/auth/decorators/roles.decorator';
 import { Role } from 'src/modules/auth/roles.enum';
 import { ProviderStatus } from './enums/provider-status.enum';
 import { UpdateProviderDto } from './dto/update-provider.dto';
+import { AuthService } from 'src/modules/auth/auth.service';
+
 
 @Controller('providers')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ProvidersController {
-  constructor(private readonly providersService: ProvidersService) {}
+  constructor(
+    private readonly providersService: ProvidersService,
+    private readonly authService: AuthService, 
+  ) {}
 
-  // Listar todos los proveedores (solo administrador)
-  @Get()
+  // Aprobar o rechazar documentos de un proveedor (solo admin)
+  @Patch(':id/validate')
   @Roles(Role.Admin)
+  async validateDocuments(
+    @Param('id') id: string,
+    @Body('isApproved') isApproved: boolean,
+  ) {
+    const result = await this.providersService.validateDocuments(id, isApproved);
+    return result;
+  }
+
+  // Cambiar el estado de un proveedor (solo admin)
+  @Patch(':id/status')
+  @Roles(Role.Admin)
+  async updateStatus(
+    @Param('id') id: string,
+    @Body('status') status: ProviderStatus,
+  ) {
+    return this.providersService.updateStatus(id, status);
+  }
+
+  // Listar todos los proveedores
+  @Get()
   findAll(@Query('status') status?: ProviderStatus) {
     return this.providersService.findAll(status);
   }
 
-  // Obtener un proveedor por ID (solo admin o el propio proveedor)
+  // Obtener un proveedor por ID 
   @Get(':id')
-  @Roles(Role.Admin, Role.Provider)
   async findOne(@Param('id') id: string, @Req() req) {
     const currentUser = req.user;
 
@@ -78,6 +102,7 @@ export class ProvidersController {
     };
   }
 
+  // Completar registro tras autenticación con Google
   @Patch('complete/:id')
   @Roles(Role.Provider, Role.Admin)
   async completeProfile(
@@ -87,23 +112,14 @@ export class ProvidersController {
   ) {
     const currentUser = req.user;
 
+    // Solo el propio proveedor o el admin pueden completar su perfil
     if (currentUser.role !== Role.Admin && currentUser.id !== id) {
       throw new ForbiddenException('No tienes permiso para completar este perfil');
     }
 
-    const { email, role, status, ...safeData } = dto as any;
-
-    const updated = await this.providersService.update(id, {
-      ...safeData,
-      isCompleted: true,
-    });
-
-    return {
-      message: 'Perfil de proveedor completado correctamente',
-      provider: updated,
-    };
+    const result = await this.authService.completeRegisterProvider(id, dto);
+    return result;
   }
-
 
   // Desactivar (soft delete) proveedor
   @Delete(':id')

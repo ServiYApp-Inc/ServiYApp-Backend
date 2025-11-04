@@ -3,4 +3,5 @@ export enum UserStatus {
   INACTIVE = 'inactive',
   SUSPENDED = 'suspended',
   DELETED = 'deleted',
+  INCOMPLETE = 'incomplete'
 }

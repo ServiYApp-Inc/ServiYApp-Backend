@@ -49,9 +49,6 @@ export class User {
   @Column({ type: 'enum', enum: UserStatus, default: UserStatus.ACTIVE })
   status: UserStatus;
 
-  @Column({ default: false })
-  isCompleted: boolean;
-
   @Column({ type: 'varchar', nullable: true })
   profilePicture: string;
 

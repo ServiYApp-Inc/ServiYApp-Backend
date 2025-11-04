@@ -54,10 +54,8 @@ export class UsersSeed implements OnModuleInit {
     }
 
     for (const u of usersData) {
-      // Selecciona país aleatorio existente
       const randomCountry = countries[Math.floor(Math.random() * countries.length)];
 
-      // Normaliza rol
       const normalizedRole = (u.role || '').toLowerCase();
       const userRole =
         normalizedRole === 'admin'
@@ -66,7 +64,6 @@ export class UsersSeed implements OnModuleInit {
           ? Role.Provider
           : Role.User;
 
-      // Crea usuario
       const user = this.userRepo.create({
         names: u.names,
         surnames: u.surnames,
@@ -75,14 +72,13 @@ export class UsersSeed implements OnModuleInit {
         phone: String(u.phone),
         role: userRole,
         status: UserStatus.ACTIVE,
-        isCompleted: true,
         registrationDate: new Date(),
         country: randomCountry,
         profilePicture: u.profilePicture || null,
       });
 
       await this.userRepo.save(user);
-      this.logger.log(`✅ Usuario creado: ${u.names} (${randomCountry.name})`);
+      this.logger.log(`Usuario creado: ${u.names} (${randomCountry.name})`);
     }
 
     this.logger.log('[UsersSeed] Todos los usuarios creados correctamente.');
