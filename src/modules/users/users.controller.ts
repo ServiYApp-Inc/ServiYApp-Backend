@@ -29,6 +29,7 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   // Listar todos los usuarios (solo administrador).
+  @ApiBearerAuth()
   @Get()
   @Roles(Role.Admin)
   findAll(@Query('status') status?: UserStatus) {
@@ -36,6 +37,7 @@ export class UsersController {
   }
 
   // Obtener un usuario por ID (solo administrador y propio usuario).
+  @ApiBearerAuth()
   @Get(':id')
   @Roles(Role.Admin, Role.User)
   async findOne(@Param('id') id: string, @Req() req) {
@@ -51,6 +53,7 @@ export class UsersController {
 
   // Actualizar perfil general del usuario.
   // Solo el propio usuario o un administrador pueden modificarlo.
+  @ApiBearerAuth()
   @Patch(':id')
   @Roles(Role.Admin, Role.User)
   async update(
@@ -87,6 +90,7 @@ export class UsersController {
 
   // Completar registro tras autenticación con Google.
   // Permite completar datos faltantes y marcar el perfil como completo.
+  @ApiBearerAuth()
   @Patch('complete/:id')
   @Roles(Role.User, Role.Admin)
   async completeProfile(
@@ -114,6 +118,7 @@ export class UsersController {
   // Eliminar (desactivar) un usuario.
   // Solo el propio usuario o el administrador pueden hacerlo.
   // Se marca el estado como DELETED (eliminación lógica).
+  @ApiBearerAuth()
   @Delete(':id')
   @Roles(Role.Admin, Role.User)
   async remove(@Param('id') id: string, @Req() req) {
@@ -129,6 +134,7 @@ export class UsersController {
 
   
   // Reactivar un usuario (solo el propio usuario o un administrador)
+  @ApiBearerAuth()
   @Patch(':id/reactivate')
   @Roles(Role.Admin, Role.User)
   async reactivate(@Param('id') id: string, @Req() req) {

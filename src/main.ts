@@ -2,6 +2,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { LoggerMiddleware } from './helpers/logger.middleware';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -19,7 +20,14 @@ async function bootstrap() {
   const documentModule = SwaggerModule.createDocument(app, swaggerDoc);
   SwaggerModule.setup('docs', app, documentModule);
 
+  app.use((req, res, next) => {
+    if (req.path === '/') {
+      return res.redirect('/docs');
+    }
+    next();
+  });
 
+  app.use(new LoggerMiddleware().use);
 
   // Configurar CORS correctamente
   app.enableCors({

@@ -16,6 +16,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '../auth/roles.enum';
 import { ServiceStatus } from './enums/service-status.enum';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller('services')
 export class ServicesController {
@@ -27,12 +28,18 @@ export class ServicesController {
     return this.servicesService.findAllPublic();
   }
 
+  @Get('find-all-by-price/:order')
+  findAllByPrice(@Param('order') order: 'ASC' | 'DESC') {
+    return this.servicesService.findAllOrderedByPrice(order);
+  }
+
   @Get('find/:id')
   findOne(@Param('id') id: string) {
     return this.servicesService.findOnePublic(id);
   }
 
   // PROTEGIDOS
+  @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Post('create')
   @Roles(Role.Provider, Role.Admin)
@@ -40,6 +47,7 @@ export class ServicesController {
     return this.servicesService.create(dto, req.user);
   }
 
+  @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Patch('update/:id')
   @Roles(Role.Provider, Role.Admin)
@@ -47,6 +55,7 @@ export class ServicesController {
     return this.servicesService.update(id, dto, req.user);
   }
 
+  @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Patch('deactivate/:id')
   @Roles(Role.Provider, Role.Admin)
@@ -54,6 +63,7 @@ export class ServicesController {
     return this.servicesService.changeStatus(id, req.user, ServiceStatus.INACTIVE);
   }
 
+  @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Patch('activate/:id')
   @Roles(Role.Provider, Role.Admin)

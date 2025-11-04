@@ -149,9 +149,9 @@ async findOne(id: string): Promise<Provider> {
 
     if (data.countryId || data.regionId || data.cityId) {
       const { country, region, city } = await this.validateLocation(
-        data.countryId ?? provider.country.id,
-        data.regionId ?? provider.region.id,
-        data.cityId ?? provider.city.id,
+        data.countryId ?? provider.country?.id,
+        data.regionId ?? provider.region?.id,
+        data.cityId ?? provider.city?.id,
       );
 
       provider.country = country;

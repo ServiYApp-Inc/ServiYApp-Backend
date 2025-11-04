@@ -54,6 +54,14 @@ export class ServicesService {
     });
   }
 
+  // Devuelve todos los servicios ordenados por Precio (Por defecto Ascendente)
+  async findAllOrderedByPrice(order: 'ASC' | 'DESC' = 'ASC'): Promise<Service[]> {
+    return await this.serviceRepository.find({
+      relations: ['provider', 'category'],
+      order: { price: order }
+    })
+  }
+
   // Buscar por ID (control de acceso)
   async findOnePublic(id: string): Promise<Service> {
     const service = await this.serviceRepository.findOne({

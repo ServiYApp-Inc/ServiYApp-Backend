@@ -17,6 +17,7 @@ import { Roles } from 'src/modules/auth/decorators/roles.decorator';
 import { Role } from 'src/modules/auth/roles.enum';
 import { ProviderStatus } from './enums/provider-status.enum';
 import { UpdateProviderDto } from './dto/update-provider.dto';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller('providers')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -24,6 +25,7 @@ export class ProvidersController {
   constructor(private readonly providersService: ProvidersService) {}
 
   // Listar todos los proveedores (solo administrador)
+  @ApiBearerAuth()
   @Get()
   @Roles(Role.Admin)
   findAll(@Query('status') status?: ProviderStatus) {
@@ -31,6 +33,7 @@ export class ProvidersController {
   }
 
   // Obtener un proveedor por ID (solo admin o el propio proveedor)
+  @ApiBearerAuth()
   @Get(':id')
   @Roles(Role.Admin, Role.Provider)
   async findOne(@Param('id') id: string, @Req() req) {
@@ -46,6 +49,7 @@ export class ProvidersController {
   }
 
   // Actualizar datos del proveedor (solo admin o el propio proveedor)
+  @ApiBearerAuth()
   @Patch(':id')
   @Roles(Role.Admin, Role.Provider)
   async update(
@@ -78,6 +82,7 @@ export class ProvidersController {
     };
   }
 
+  @ApiBearerAuth()
   @Patch('complete/:id')
   @Roles(Role.Provider, Role.Admin)
   async completeProfile(
@@ -106,6 +111,7 @@ export class ProvidersController {
 
 
   // Desactivar (soft delete) proveedor
+  @ApiBearerAuth()
   @Delete(':id')
   @Roles(Role.Admin, Role.Provider)
   async remove(@Param('id') id: string, @Req() req) {
@@ -119,6 +125,7 @@ export class ProvidersController {
   }
 
   // Reactivar proveedor
+  @ApiBearerAuth()
   @Patch(':id/reactivate')
   @Roles(Role.Admin, Role.Provider)
   async reactivate(@Param('id') id: string, @Req() req) {
