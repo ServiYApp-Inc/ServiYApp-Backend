@@ -3,7 +3,6 @@ import { Strategy, VerifyCallback } from 'passport-google-oauth20';
 import { Injectable } from '@nestjs/common';
 import { AuthService } from '../auth.service';
 
-// Estrategia de autenticación para proveedores mediante Google OAuth 2.0.
 @Injectable()
 export class GoogleProviderStrategy extends PassportStrategy(Strategy, 'google-provider') {
   constructor(private authService: AuthService) {
@@ -15,25 +14,31 @@ export class GoogleProviderStrategy extends PassportStrategy(Strategy, 'google-p
     });
   }
 
-  // Valida o crea un proveedor después de autenticarse con Google.
   async validate(
-    
     accessToken: string,
     refreshToken: string,
     profile: any,
     done: VerifyCallback,
   ): Promise<any> {
-    const { name, emails, photos } = profile;
+    console.log('VALIDANDO PROVEEDOR GOOGLE...', profile);
 
-    const providerData = {
-      names: name?.givenName,
-      surnames: name?.familyName,
-      email: emails[0].value,
-      profilePicture: photos[0].value,
-      role: 'provider',
-    };
+    try {
+      const { name, emails, photos } = profile;
 
-    const provider = await this.authService.validateOrCreateGoogleProvider(providerData);
-    done(null, provider);
+      const providerData = {
+        names: name?.givenName,
+        surnames: name?.familyName,
+        email: emails?.[0]?.value,
+        profilePicture: photos?.[0]?.value,
+        role: 'provider',
+      };
+
+      const provider = await this.authService.validateOrCreateGoogleProvider(providerData);
+      console.log('Proveedor Google validado/creado:', provider);
+      done(null, provider);
+    } catch (error) {
+      console.error('ERROR EN VALIDATE GOOGLE PROVIDER:', error);
+      done(error, null);
+    }
   }
 }

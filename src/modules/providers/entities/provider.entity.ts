@@ -67,11 +67,11 @@ export class Provider {
   @Column({ type: 'enum', enum: Role, default: Role.Provider })
   role: Role;
 
-  @Column({   type: 'enum', enum: ProviderStatus, default: ProviderStatus.PENDING, })
-  status: ProviderStatus;
-
   @Column({ default: false })
   isCompleted: boolean;
+
+  @Column({ type: 'enum', enum: ProviderStatus, default: ProviderStatus.PENDING,  })
+  status: ProviderStatus;
 
   @CreateDateColumn({ type: 'timestamp' })
   registrationDate: Date;
