@@ -7,29 +7,32 @@ const nodeEnv = process.env.NODE_ENV?.trim() || 'development';
 const isProduction = nodeEnv === 'production';
 const isTest = nodeEnv === 'test';
 
-// Cargar el archivo .env correcto
-const envFilePath = isProduction
-  ? '.production.env'
-  : isTest
-    ? '.test.env'
-    : '.development.env';
+// Si no hay NODE_ENV definido, asumimos producción (Render siempre tiene variables de entorno)
+if (!process.env.NODE_ENV) {
+  process.env.NODE_ENV = 'production';
+}
 
-dotenv.config({ path: envFilePath, override: true });
-
-console.log(`Entorno actual: ${nodeEnv}`);
-console.log(`Cargando archivo env: ${envFilePath}`);
+// Cargar el archivo .env correcto solo en local
+if (!isProduction) {
+  const envFilePath = isTest ? '.test.env' : '.development.env';
+  dotenv.config({ path: envFilePath, override: true });
+  console.log(`Cargando archivo env local: ${envFilePath}`);
+} else {
+  console.log('Cargando variables de entorno de Render (production)');
+}
 
 // Leer variable opcional para seed
 const seedOnStart =
   process.env.SEED_ON_START?.toLowerCase() === 'true' ? true : false;
 
+// ⚙️ Configuración de conexión
 const config: DataSourceOptions = isProduction
   ? {
       type: 'postgres',
-      // Render provee DATABASE_URL, así que lo usamos directamente
-      url: process.env.DATABASE_URL,
+      url: process.env.DATABASE_URL, // Render usa esta variable
       ssl: { rejectUnauthorized: false },
-      synchronize: false, // nunca usar auto-sync en prod
+      synchronize:
+        process.env.SYNCHRONIZE?.toLowerCase() === 'true' ? true : false, // 🔥 configurable desde Render
       entities: [__dirname + '/../**/*.entity{.ts,.js}'],
       migrations: [__dirname + '/../migrations/*{.ts,.js}'],
       logging: false,
