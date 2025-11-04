@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Category } from '../entities/category.entity';
@@ -9,6 +9,7 @@ import * as path from 'path';
 // Se ejecuta automáticamente al iniciar el módulo (solo en entornos no productivos).
 @Injectable()
 export class CategoriesSeed implements OnModuleInit {
+  private readonly logger = new Logger(CategoriesSeed.name);
   constructor(
     @InjectRepository(Category)
     private readonly categoryRepo: Repository<Category>,
@@ -16,8 +17,12 @@ export class CategoriesSeed implements OnModuleInit {
 
   async onModuleInit() {
     // Evita la ejecución en entornos de producción.
-    if (process.env.NODE_ENV === 'production') {
-      console.log('[CategoriesSeed] Entorno de producción, se omite precarga de categorías.');
+    // if (process.env.NODE_ENV === 'production') {
+    //   console.log('[CategoriesSeed] Entorno de producción, se omite precarga de categorías.');
+    //   return;
+    // }
+    if (process.env.SEED_ON_START !== 'true') {
+      this.logger.log('[CategoriesSeed] SEED_ON_START=false → no se ejecuta el seed.');
       return;
     }
 

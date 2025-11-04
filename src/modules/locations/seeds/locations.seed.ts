@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Country } from '../entities/country.entity';
@@ -11,6 +11,7 @@ import * as path from 'path';
 // Inserta países, regiones y ciudades desde un archivo JSON al iniciar el módulo.
 @Injectable()
 export class LocationsSeed implements OnModuleInit {
+  private readonly logger = new Logger(LocationsSeed.name);
   constructor(
     @InjectRepository(Country)
     private readonly countryRepo: Repository<Country>,
@@ -24,12 +25,16 @@ export class LocationsSeed implements OnModuleInit {
 
   async onModuleInit() {
     // Se ejecuta solo en entornos de desarrollo.
-    if (process.env.NODE_ENV === 'production') {
-      console.log('[LocationsSeed] Entorno de producción, se omite precarga de ubicaciones.');
+    // if (process.env.NODE_ENV === 'production') {
+    //   console.log('[LocationsSeed] Entorno de producción, se omite precarga de ubicaciones.');
+    //   return;
+    // }
+    if (process.env.SEED_ON_START !== 'true') {
+      this.logger.log('[LocationsSeed] SEED_ON_START=false → no se ejecuta el seed.');
       return;
     }
 
-    console.log('[LocationsSeed] Verificando datos de ubicación...');
+    this.logger.log('[LocationsSeed] Verificando datos de ubicación...');
 
     const count = await this.countryRepo.count();
     if (count > 0) {
@@ -37,7 +42,7 @@ export class LocationsSeed implements OnModuleInit {
       return;
     }
 
-    console.log('[LocationsSeed] Cargando ubicaciones desde JSON...');
+    this.logger.log('[LocationsSeed] Cargando ubicaciones desde JSON...');
 
     const filePath = path.join('src/modules/locations/seeds/data/locations.json');
     if (!fs.existsSync(filePath)) {
@@ -71,6 +76,6 @@ export class LocationsSeed implements OnModuleInit {
       }
     }
 
-    console.log('[LocationsSeed] Países, regiones y ciudades cargadas correctamente.');
+    this.logger.log('[LocationsSeed] Países, regiones y ciudades cargadas correctamente.');
   }
 }

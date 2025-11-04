@@ -22,7 +22,11 @@ export class ServicesSeed implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    if (process.env.NODE_ENV === 'production') return;
+    // if (process.env.NODE_ENV === 'production') return;
+    if (process.env.SEED_ON_START !== 'true') {
+      this.logger.log('[ServicesSeed] SEED_ON_START=false → no se ejecuta el seed.');
+      return;
+    }
 
     const count = await this.serviceRepo.count();
     if (count > 0) {
