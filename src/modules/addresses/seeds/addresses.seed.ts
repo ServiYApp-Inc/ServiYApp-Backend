@@ -88,7 +88,7 @@ export class AddressesSeed implements OnModuleInit {
         await this.addressRepo.save(address);
         totalCreated++;
         this.logger.log(
-          `✅ (${i}/2) Dirección creada para ${user.names}: ${randomCity.name}, ${randomRegion.name}, ${randomCountry.name}`,
+          `(${i}/2) Dirección creada para ${user.names}: ${randomCity.name}, ${randomRegion.name}, ${randomCountry.name}`,
         );
       }
     }
