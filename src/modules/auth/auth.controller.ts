@@ -5,6 +5,8 @@ import express from 'express';
 import { CompleteRegisterUserDto } from './dto/complete-register-user.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CreateProviderDto } from '../providers/dto/create-provider.dto';
+import { ApiBody } from '@nestjs/swagger';
+import { CreateUserDto } from '../users/dto/create-user.dto';
 
 // Controlador de autenticación.
 // Maneja registro, login y autenticación con Google para usuarios y proveedores.
@@ -28,12 +30,14 @@ export class AuthController {
 
   // Registra un nuevo usuario con email y contraseña.
   @Post('register/user')
+  @ApiBody({ type: CreateUserDto })
   registerUser(@Body() body: any) {
     return this.authService.registerUser(body);
   }
 
   // Registra un nuevo proveedor con email y contraseña.
   @Post('register/provider')
+  @ApiBody({ type: CreateProviderDto })
   async registerProvider(@Body() dto: CreateProviderDto) {
     return this.authService.registerProvider(dto);
   }
