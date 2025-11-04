@@ -18,7 +18,7 @@ import { Role } from 'src/modules/auth/roles.enum';
 import { ProviderStatus } from './enums/provider-status.enum';
 import { UpdateProviderDto } from './dto/update-provider.dto';
 import { AuthService } from 'src/modules/auth/auth.service';
-
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller('providers')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -50,12 +50,14 @@ export class ProvidersController {
   }
 
   // Listar todos los proveedores
+  @ApiBearerAuth()
   @Get()
   findAll(@Query('status') status?: ProviderStatus) {
     return this.providersService.findAll(status);
   }
 
   // Obtener un proveedor por ID 
+  @ApiBearerAuth()
   @Get(':id')
   async findOne(@Param('id') id: string, @Req() req) {
     const currentUser = req.user;
@@ -70,6 +72,7 @@ export class ProvidersController {
   }
 
   // Actualizar datos del proveedor (solo admin o el propio proveedor)
+  @ApiBearerAuth()
   @Patch(':id')
   @Roles(Role.Admin, Role.Provider)
   async update(
@@ -103,6 +106,7 @@ export class ProvidersController {
   }
 
   // Completar registro tras autenticación con Google
+  @ApiBearerAuth()
   @Patch('complete/:id')
   @Roles(Role.Provider, Role.Admin)
   async completeProfile(
@@ -122,6 +126,7 @@ export class ProvidersController {
   }
 
   // Desactivar (soft delete) proveedor
+  @ApiBearerAuth()
   @Delete(':id')
   @Roles(Role.Admin, Role.Provider)
   async remove(@Param('id') id: string, @Req() req) {
@@ -135,6 +140,7 @@ export class ProvidersController {
   }
 
   // Reactivar proveedor
+  @ApiBearerAuth()
   @Patch(':id/reactivate')
   @Roles(Role.Admin, Role.Provider)
   async reactivate(@Param('id') id: string, @Req() req) {
