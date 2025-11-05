@@ -41,6 +41,6 @@ export class ServiceOrder {
   @JoinColumn({ name: 'addressId' })
   address: Address;
 
-  @OneToMany(() => Payment, (payment) => payment.serviceOrders)
+  @OneToMany(() => Payment, (payment) => payment.serviceOrder)
   payments: Payment[];
 }

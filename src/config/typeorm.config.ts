@@ -25,14 +25,14 @@ if (!isProduction) {
 const seedOnStart =
   process.env.SEED_ON_START?.toLowerCase() === 'true' ? true : false;
 
-// ⚙️ Configuración de conexión
+// Configuración de conexión
 const config: DataSourceOptions = isProduction
   ? {
       type: 'postgres',
       url: process.env.DATABASE_URL, // Render usa esta variable
       ssl: { rejectUnauthorized: false },
       synchronize:
-        process.env.SYNCHRONIZE?.toLowerCase() === 'true' ? true : false, // 🔥 configurable desde Render
+        process.env.SYNCHRONIZE?.toLowerCase() === 'true' ? true : false, 
       entities: [__dirname + '/../**/*.entity{.ts,.js}'],
       migrations: [__dirname + '/../migrations/*{.ts,.js}'],
       logging: false,

@@ -8,6 +8,8 @@ import { UsersModule } from '../users/users.module';
 import { GoogleProviderStrategy } from './strategies/google-provider.strategy';
 import { GoogleUserStrategy } from './strategies/google-user.strategy';
 import { ProvidersModule } from '../providers/providers.module';
+import { MailerService } from './mailer.service';
+import { MailerModule } from './mailer.module';
 
 // Módulo de autenticación.
 // Centraliza la configuración de JWT, las estrategias de autenticación
@@ -27,6 +29,8 @@ import { ProvidersModule } from '../providers/providers.module';
     // Módulos de usuarios y proveedores, necesarios para las operaciones de autenticación.
     UsersModule,
     forwardRef(() => ProvidersModule),
+
+    MailerModule, 
   ],
 
   // Controladores asociados al módulo de autenticación.
