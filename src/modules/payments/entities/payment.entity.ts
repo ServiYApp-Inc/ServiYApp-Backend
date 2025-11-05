@@ -1,7 +1,7 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { ServiceOrder } from '../../service-orders/entities/service-order.entity';
 
-Entity({ name: 'payments' });
+@Entity({ name: 'payments' })
 export class Payment {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -47,5 +47,6 @@ export class Payment {
   payerEmail: string;
 
   @ManyToOne(() => ServiceOrder, (serviceOrder) => serviceOrder.payments)
-  serviceOrders: ServiceOrder[];
+  @JoinColumn({ name: 'service_order_id' })
+  serviceOrder: ServiceOrder;
 }

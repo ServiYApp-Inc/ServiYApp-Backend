@@ -2,6 +2,7 @@ import {
   Injectable,
   BadRequestException,
   UnauthorizedException,
+  NotFoundException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -12,6 +13,8 @@ import { ProviderStatus } from '../providers/enums/provider-status.enum';
 import { getGoogleRedirectUrl } from 'src/helpers/redirect.helper';
 import { UserStatus } from '../users/enums/user-status.enum';
 import { CreateProviderDto } from '../providers/dto/create-provider.dto';
+import { MailerService } from './mailer.service';
+
 
 @Injectable()
 export class AuthService {
@@ -19,6 +22,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly providersService: ProvidersService,
     private readonly jwtService: JwtService,
+    private mailerService: MailerService,
   ) {}
 
 
@@ -58,6 +62,11 @@ export class AuthService {
       role: Role.User,
       status: UserStatus.ACTIVE,
     });
+
+    // Enviar correo de bienvenida
+    this.mailerService.sendWelcomeUserMail(newUser).catch((err) =>
+      console.error('Error enviando correo de bienvenida usuario:', err),
+    );
 
     // Generar el token JWT
     const payload = { id: newUser.id, email: newUser.email, role: newUser.role };
@@ -101,6 +110,11 @@ export class AuthService {
         status: UserStatus.INCOMPLETE, // Estado incompleto hasta que termine el registro
         profilePicture: userData.profilePicture || null,
       });
+
+      // Enviar correo de bienvenida
+      this.mailerService.sendWelcomeUserMail(user).catch((err) =>
+        console.error('Error enviando correo de bienvenida usuario Google:', err),
+      );
     } else {
       // Si ya existe, actualizamos su foto de perfil si no tenía
       if (!user.profilePicture && userData.profilePicture) {
@@ -251,6 +265,53 @@ export class AuthService {
 
 
 
+  async sendPasswordResetEmail(email: string, type: 'user' | 'provider') {
+    let entity: any;
+
+    if (type === 'user') {
+      entity = await this.usersService.findByEmail(email);
+    } else {
+      entity = await this.providersService.findByEmail(email);
+    }
+
+    if (!entity) throw new NotFoundException(`No existe ${type} con ese correo.`);
+
+    const token = await this.jwtService.signAsync(
+      { sub: entity.id, type },
+      { expiresIn: '15m', secret: process.env.JWT_SECRET! },
+    );
+
+    const resetLink = `${process.env.FRONTEND_BASE_URL}/reset-password?id=${entity.id}&type=${type}&token=${token}`;
+
+    await this.mailerService.sendPasswordResetMail(entity, resetLink, type);
+    return { message: `Correo de recuperación enviado al ${type}.` };
+  }
+
+  async resetPassword(token: string, newPassword: string) {
+    try {
+      const payload = await this.jwtService.verifyAsync(token, {
+        secret: process.env.JWT_SECRET!,
+      });
+
+      const hashed = await bcrypt.hash(newPassword, 10);
+
+      if (payload.type === 'user') {
+        await this.usersService.update(payload.sub, { password: hashed });
+      } else if (payload.type === 'provider') {
+        await this.providersService.update(payload.sub, { password: hashed });
+      }
+
+      return { message: 'Contraseña actualizada correctamente' };
+    } catch {
+      throw new BadRequestException('Token inválido o expirado');
+    }
+  }
+
+
+
+
+  
+
       //PROVEEDORES
 
   // Registro de proveedor (con validación de país, región, ciudad)
@@ -277,6 +338,12 @@ export class AuthService {
       status: ProviderStatus.ACTIVE, // activo por defecto
       isCompleted: false,            // aún no validado por admin
     });
+
+    // Enviar correo de bienvenida
+    this.mailerService.sendWelcomeProviderMail(newProvider).catch((err) =>
+      console.error('Error enviando correo de bienvenida proveedor:', err),
+    );
+
 
     // Generar JWT
     const payload = { id: newProvider.id, email: newProvider.email, role: newProvider.role };
@@ -352,6 +419,10 @@ export class AuthService {
       status: ProviderStatus.INCOMPLETE, // estado inicial
       isCompleted: false,                 // aún no validado por admin
     });
+
+    this.mailerService.sendWelcomeProviderMail(provider).catch((err) =>
+      console.error('Error enviando correo de bienvenida proveedor Google:', err),
+    );
 
     return provider;
   }

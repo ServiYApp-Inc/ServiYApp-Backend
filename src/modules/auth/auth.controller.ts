@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Req, UseGuards, Res, Patch } from '@nestjs/common';
+import { Controller, Post, Body, Get, Req, UseGuards, Res, Patch, Query } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthGuard } from '@nestjs/passport';
 import express from 'express';
@@ -14,6 +14,30 @@ import { CreateUserDto } from '../users/dto/create-user.dto';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+
+
+  // Recuperar contraseña (usuarios)
+  @Post('users/forgot-password')
+  async forgotPasswordUser(@Body('email') email: string) {
+    return this.authService.sendPasswordResetEmail(email, 'user');
+  }
+
+  // Recuperar contraseña (proveedores)
+  @Post('providers/forgot-password')
+  async forgotPasswordProvider(@Body('email') email: string) {
+    return this.authService.sendPasswordResetEmail(email, 'provider');
+  }
+
+  // Restablecer contraseña (igual para ambos)
+  @Patch('reset-password')
+  async resetPassword(
+    @Query('token') token: string,
+    @Body('password') password: string,
+  ) {
+    return this.authService.resetPassword(token, password);
+  }
+
+  
 
   // Inicia el flujo de autenticación con Google para usuarios.
   // Redirige al usuario al formulario de inicio de sesión de Google.
