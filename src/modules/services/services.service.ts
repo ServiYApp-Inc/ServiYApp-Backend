@@ -54,6 +54,34 @@ export class ServicesService {
     });
   }
 
+  // Ordenar por Parametro ('price' o 'duration')
+  async findAllBy(param: string): Promise<Service[]> {
+    return await this.serviceRepository.find({
+      relations: ['provider', 'category'],
+      order: { [param]: 'ASC' }
+    })
+  }
+
+  async filteredFind({country, region, city}) {
+    const services = await this.serviceRepository.find({
+      relations: [
+        'provider',
+        'provider.country',
+        'provider.region',
+        'provider.city',
+        'category'
+      ],
+      where: { status: ServiceStatus.ACTIVE }
+    });
+
+    return services.filter(service => {
+      const matchesCountry = country ? service.provider.country?.name === country : true;
+      const matchesRegion = region ? service.provider.region?.name === region : true;
+      const matchesCity = city ? service.provider.city?.name === city : true;
+      return matchesCountry && matchesRegion && matchesCity;
+    });
+  }
+
   // Buscar por ID (control de acceso)
   async findOnePublic(id: string): Promise<Service> {
     const service = await this.serviceRepository.findOne({
