@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/unbound-method */
 /* eslint-disable @typescript-eslint/no-floating-promises */
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
@@ -29,10 +30,9 @@ async function bootstrap() {
 
   app.use(new LoggerMiddleware().use);
 
-  
   // Configurar CORS correctamente
   app.enableCors({
-    origin: ['http://localhost:3001', 'https://serviyapp.vercel.app'], 
+    origin: ['http://localhost:3001', 'https://serviyapp-frontend.vercel.app'],
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     credentials: true,
   });
