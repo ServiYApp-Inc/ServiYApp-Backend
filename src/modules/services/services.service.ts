@@ -68,18 +68,33 @@ export class ServicesService {
   }
 
   // Ordenar por Parametro ('price' o 'duration')
-  async findAllBy(param: string): Promise<Service[]> {
-    return await this.serviceRepository.find({
+  async findAllBy(
+    param: string,
+    page?: number,
+    limit?: number,
+  ): Promise<Service[]> {
+    const services = await this.serviceRepository.find({
       relations: ['provider', 'category'],
       order: { [param]: 'ASC' }
     })
+
+    if (page && limit) {
+      const start = (page - 1) * limit;
+      const end = start + limit;
+      return services.slice(start, end);
+    };
+
+    return services;
   }
 
-  async filteredFind({country, region, city}) {
+  async filteredFind(
+    { region, city, category, serviceName },
+    page?: number,
+    limit?: number,
+  ): Promise<Service[]> {
     const services = await this.serviceRepository.find({
       relations: [
         'provider',
-        'provider.country',
         'provider.region',
         'provider.city',
         'category'
@@ -87,12 +102,21 @@ export class ServicesService {
       where: { status: ServiceStatus.ACTIVE }
     });
 
-    return services.filter(service => {
-      const matchesCountry = country ? service.provider.country?.name === country : true;
+    const filtered = services.filter(service => {
       const matchesRegion = region ? service.provider.region?.name === region : true;
       const matchesCity = city ? service.provider.city?.name === city : true;
-      return matchesCountry && matchesRegion && matchesCity;
+      const matchesCategory = category ? service.category?.name === category : true;
+      const matchesService = serviceName ? service.name.toLowerCase().includes(serviceName.toLowerCase()) : true;
+      return matchesRegion && matchesCity && matchesCategory && matchesService;
     });
+
+    if (page && limit) {
+      const start = (page - 1) * limit;
+      const end = start + limit;
+      return filtered.slice(start, end);
+    };
+
+    return filtered;
   }
 
   // Buscar por ID (control de acceso)
