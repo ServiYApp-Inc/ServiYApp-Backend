@@ -1,8 +1,17 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  OneToMany,
+} from 'typeorm';
 import { Country } from 'src/modules/locations/entities/country.entity';
 import { Region } from 'src/modules/locations/entities/region.entity';
 import { City } from 'src/modules/locations/entities/city.entity';
 import { User } from 'src/modules/users/entities/user.entity';
+import { ServiceOrder } from 'src/modules/service-orders/entities/service-order.entity';
+import { on } from 'events';
 
 // Entidad que representa una dirección física asociada a un usuario.
 @Entity('addresses')
@@ -54,4 +63,7 @@ export class Address {
   @ManyToOne(() => User, (user) => user.addresses, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user: User;
+
+  @OneToMany(() => ServiceOrder, (serviceOrder) => serviceOrder.address)
+  serviceOrders: ServiceOrder[];
 }

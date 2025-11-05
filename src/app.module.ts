@@ -14,6 +14,8 @@ import { CategoriesModule } from './modules/categories/categories.module';
 import { ServiceOrdersModule } from './modules/service-orders/service-orders.module';
 import { LocationsModule } from './modules/locations/locations.module'; 
 import { SeedsModule } from './modules/seeds/seeds.module';
+import { PaymentsModule } from './modules/payments/payments.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -43,6 +45,10 @@ import { SeedsModule } from './modules/seeds/seeds.module';
     ServiceOrdersModule,
 
     SeedsModule,
+
+    PaymentsModule,
+
+    NotificationsModule,
 
   ],
   controllers: [AppController],

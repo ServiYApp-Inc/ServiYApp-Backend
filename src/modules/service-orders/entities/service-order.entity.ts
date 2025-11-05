@@ -4,20 +4,19 @@ import {
   Column,
   ManyToOne,
   CreateDateColumn,
+  JoinColumn,
+  OneToMany,
 } from 'typeorm';
-import { User } from 'src/modules/users/entities/user.entity';
 import { Provider } from 'src/modules/providers/entities/provider.entity';
+import { User } from 'src/modules/users/entities/user.entity';
+import { Service } from 'src/modules/services/entities/service.entity';
+import { Address } from 'src/modules/addresses/entities/address.entity';
+import { Payment } from 'src/modules/payments/entities/payment.entity';
 
 @Entity({ name: 'service_orders' })
 export class ServiceOrder {
   @PrimaryGeneratedColumn('uuid')
   id: string;
-
-  @Column({ length: 150 })
-  name: string;
-
-  @Column({ type: 'text' })
-  description: string;
 
   @Column({ default: 'pending' })
   status: string; // pending | accepted | completed | cancelled
@@ -25,11 +24,23 @@ export class ServiceOrder {
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
 
-  @ManyToOne(() => User, (user) => user.orders, { onDelete: 'CASCADE' })
+  //Creacion de las relaciones
+  @ManyToOne(() => Provider, (provider) => provider.serviceOrders)
+  @JoinColumn({ name: 'providerId' })
+  provider: Provider;
+
+  @ManyToOne(() => User, (user) => user.serviceOrders)
+  @JoinColumn({ name: 'userId' })
   user: User;
 
-  @ManyToOne(() => Provider, (provider) => provider.orders, {
-    onDelete: 'CASCADE',
-  })
-  provider: Provider;
+  @ManyToOne(() => Service, (service) => service.serviceOrders)
+  @JoinColumn({ name: 'serviceId' })
+  service: Service;
+
+  @ManyToOne(() => Address, (address) => address.serviceOrders)
+  @JoinColumn({ name: 'addressId' })
+  address: Address;
+
+  @OneToMany(() => Payment, (payment) => payment.serviceOrders)
+  payments: Payment[];
 }

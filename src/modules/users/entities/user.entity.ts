@@ -55,8 +55,8 @@ export class User {
   @CreateDateColumn({ type: 'timestamp' })
   registrationDate: Date;
 
-  @OneToMany(() => ServiceOrder, (order) => order.user)
-  orders: ServiceOrder[];
+  @OneToMany(() => ServiceOrder, (serviceOrder) => serviceOrder.user)
+  serviceOrders: ServiceOrder[];
 
   @OneToMany(() => Address, (address) => address.user)
   addresses: Address[];
