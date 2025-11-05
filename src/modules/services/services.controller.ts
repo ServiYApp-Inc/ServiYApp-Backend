@@ -30,6 +30,17 @@ export class ServicesController {
     return this.servicesService.findAllPublic();
   }
 
+  @Get('find-all-paged')
+  @ApiQuery({ name: 'page', required: false, type: String })
+  @ApiQuery({ name: 'limit', required: false, type: String })
+  findAllPaged(@Query('page') page?: string, @Query('limit') limit?: string) {
+    if (limit && page) {
+      return this.servicesService.findAllPaged(+page, +limit)
+    }
+    
+    return this.servicesService.findAllPublic();
+  }
+
   // Ordenar por Parametro ('price' o 'duration')
   @Get('find-all/:param')
   findAllBy(@Param('param') param: string ) {
