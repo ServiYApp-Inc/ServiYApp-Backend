@@ -43,7 +43,6 @@ export class Provider {
   @Column({ type: 'varchar', nullable: false })
   password: string;
 
-
   // Relaciones con entidades de ubicación
   @ManyToOne(() => Country, { eager: true, nullable: true })
   @JoinColumn({ name: 'country_id' })
@@ -57,7 +56,6 @@ export class Provider {
   @JoinColumn({ name: 'city_id' })
   city: City | null;
 
-
   @Column({ type: 'varchar', length: 150, nullable: true })
   address: string;
 
@@ -70,7 +68,11 @@ export class Provider {
   @Column({ default: false })
   isCompleted: boolean;
 
-  @Column({ type: 'enum', enum: ProviderStatus, default: ProviderStatus.PENDING,  })
+  @Column({
+    type: 'enum',
+    enum: ProviderStatus,
+    default: ProviderStatus.PENDING,
+  })
   status: ProviderStatus;
 
   @CreateDateColumn({ type: 'timestamp' })
@@ -79,6 +81,6 @@ export class Provider {
   @OneToMany(() => Service, (service) => service.provider)
   services: Service[];
 
-  @OneToMany(() => ServiceOrder, (order) => order.provider)
-  orders: ServiceOrder[];
+  @OneToMany(() => ServiceOrder, (serviceOrder) => serviceOrder.provider)
+  serviceOrders: ServiceOrder[];
 }

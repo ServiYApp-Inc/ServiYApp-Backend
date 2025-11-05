@@ -5,10 +5,13 @@ import {
   ManyToOne,
   JoinColumn,
   CreateDateColumn,
+  OneToMany,
 } from 'typeorm';
 import { Provider } from 'src/modules/providers/entities/provider.entity';
 import { Category } from 'src/modules/categories/entities/category.entity';
 import { ServiceStatus } from '../enums/service-status.enum';
+import { ServiceOrder } from 'src/modules/service-orders/entities/service-order.entity';
+import { on } from 'events';
 
 // Entidad que representa los servicios ofrecidos por los proveedores.
 // Incluye información básica, relación con el proveedor y su categoría.
@@ -26,10 +29,10 @@ export class Service {
   @Column({ nullable: true })
   photo: string;
 
-  @Column({ type: 'enum', enum: ServiceStatus, default: ServiceStatus.ACTIVE, })
-  status: ServiceStatus
+  @Column({ type: 'enum', enum: ServiceStatus, default: ServiceStatus.ACTIVE })
+  status: ServiceStatus;
 
-  @Column({ type: 'int'})
+  @Column({ type: 'int' })
   price: number;
 
   @Column({ type: 'int', nullable: true })
@@ -45,4 +48,7 @@ export class Service {
   @ManyToOne(() => Category, (category) => category.services)
   @JoinColumn({ name: 'categoryId' })
   category: Category;
+
+  @OneToMany(() => ServiceOrder, (serviceOrder) => serviceOrder.service)
+  serviceOrders: ServiceOrder[];
 }
