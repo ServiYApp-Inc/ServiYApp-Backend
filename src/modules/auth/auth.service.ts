@@ -492,7 +492,7 @@ export class AuthService {
     provider.region = region;
     provider.city = city;
     provider.status = ProviderStatus.ACTIVE; // ahora puede acceder a su panel
-    provider.isCompleted = true; // aún no ha enviado documentos esto deberia ser false si agregamos la validaicon de admin
+    provider.isCompleted = false; // aún no ha enviado documentos 
 
     await this.providersService.save(provider);
 
