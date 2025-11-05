@@ -7,6 +7,7 @@ import {
   Param,
   UseGuards,
   Req,
+  Query,
 } from '@nestjs/common';
 import { ServicesService } from './services.service';
 import { CreateServiceDto } from './dto/create-service.dto';
@@ -16,7 +17,8 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '../auth/roles.enum';
 import { ServiceStatus } from './enums/service-status.enum';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { count } from 'console';
 
 @Controller('services')
 export class ServicesController {
@@ -26,6 +28,26 @@ export class ServicesController {
   @Get('find-all')
   findAll() {
     return this.servicesService.findAllPublic();
+  }
+
+  // Ordenar por Parametro ('price' o 'duration')
+  @Get('find-all/:param')
+  findAllBy(@Param('param') param: string ) {
+    return this.servicesService.findAllBy(param)
+  }
+
+  // Filtrar resultados por Ciudad, region, y Pais
+  // Por el momento se omite Busqueda por servicio, a implementar
+  @Get('filtered-find/')
+  @ApiQuery({ name: 'country', required: false, type: String })
+  @ApiQuery({ name: 'region', required: false, type: String })
+  @ApiQuery({ name: 'city', required: false, type: String })
+  filteredFind(
+    @Query('country') country?: string,
+    @Query('region') region?: string,
+    @Query('city') city?: string,
+  ) {
+    return this.servicesService.filteredFind({ country, region, city });
   }
 
   @Get('find/:id')
@@ -66,3 +88,5 @@ export class ServicesController {
     return this.servicesService.changeStatus(id, req.user, ServiceStatus.ACTIVE);
   }
 }
+
+
