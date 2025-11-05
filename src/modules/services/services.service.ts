@@ -54,6 +54,19 @@ export class ServicesService {
     });
   }
 
+  // Ver todos los servicios paginados
+  async findAllPaged(page: number = 1, limit: number = 5): Promise<Service[]> {
+    let services = await this.serviceRepository.find({
+      relations: ['provider', 'category'],
+      order: { createdAt: 'DESC' },
+    });
+
+    const start = (page-1) * limit;
+    const end = start + limit;
+
+    return (services = services.slice(start, end))
+  }
+
   // Ordenar por Parametro ('price' o 'duration')
   async findAllBy(param: string): Promise<Service[]> {
     return await this.serviceRepository.find({
