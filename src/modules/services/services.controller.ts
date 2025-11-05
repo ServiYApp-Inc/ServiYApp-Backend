@@ -19,6 +19,7 @@ import { Role } from '../auth/roles.enum';
 import { ServiceStatus } from './enums/service-status.enum';
 import { ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { count } from 'console';
+import { Service } from './entities/service.entity';
 
 @Controller('services')
 export class ServicesController {
@@ -42,23 +43,44 @@ export class ServicesController {
   }
 
   // Ordenar por Parametro ('price' o 'duration')
-  @Get('find-all/:param')
-  findAllBy(@Param('param') param: string ) {
-    return this.servicesService.findAllBy(param)
+  @Get('find-all-by-param')
+  @ApiQuery({ name: 'param', required: true, type: String })
+  @ApiQuery({ name: 'page', required: false, type: String })
+  @ApiQuery({ name: 'limit', required: false, type: String })
+  findAllBy(
+    @Query('param') param: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.servicesService.findAllBy(
+      param,
+      page ? +page : undefined,
+      limit ? +limit : undefined,
+    );
   }
 
-  // Filtrar resultados por Ciudad, region, y Pais
-  // Por el momento se omite Busqueda por servicio, a implementar
+  // Filtrar resultados por Ciudad, Region, cCategoria y Servicio
+  // 
   @Get('filtered-find/')
-  @ApiQuery({ name: 'country', required: false, type: String })
   @ApiQuery({ name: 'region', required: false, type: String })
   @ApiQuery({ name: 'city', required: false, type: String })
+  @ApiQuery({ name: 'category', required: false, type: String })
+  @ApiQuery({ name: 'serviceName', required: false, type: String })
+  @ApiQuery({ name: 'page', required: false, type: String })
+  @ApiQuery({ name: 'limit', required: false, type: String })
   filteredFind(
-    @Query('country') country?: string,
     @Query('region') region?: string,
     @Query('city') city?: string,
+    @Query('category') category?: string,
+    @Query('serviceName') serviceName?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
-    return this.servicesService.filteredFind({ country, region, city });
+    return this.servicesService.filteredFind(
+    { region, city, category, serviceName },
+    page ? +page : undefined,
+    limit ? +limit : undefined
+    );
   }
 
   @Get('find/:id')
