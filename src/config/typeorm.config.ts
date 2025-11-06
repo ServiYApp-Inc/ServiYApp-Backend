@@ -1,6 +1,20 @@
 import { registerAs } from '@nestjs/config';
 import { DataSource, DataSourceOptions } from 'typeorm';
 import * as dotenv from 'dotenv';
+import { User } from 'src/modules/users/entities/user.entity';
+import { Address } from 'src/modules/addresses/entities/address.entity';
+import { Category } from 'src/modules/categories/entities/category.entity';
+import { MessageEntity } from 'src/modules/chat/entities/message.entity';
+import { Country } from 'src/modules/locations/entities/country.entity';
+import { Region } from 'src/modules/locations/entities/region.entity';
+import { City } from 'src/modules/locations/entities/city.entity';
+import { Notification } from 'src/modules/notifications/entities/notification.entity';
+import { Payment } from 'src/modules/payments/entities/payment.entity';
+import { ProviderDocument } from 'src/modules/providers/entities/provider-document.entity';
+import { Provider } from 'src/modules/providers/entities/provider.entity';
+import { Schedule } from 'src/modules/providers/entities/schedule.entity';
+import { ServiceOrder } from 'src/modules/service-orders/entities/service-order.entity';
+import { Service } from 'src/modules/services/entities/service.entity';
 
 // Detectar entorno
 const nodeEnv = process.env.NODE_ENV?.trim() || 'development';
@@ -32,8 +46,23 @@ const config: DataSourceOptions = isProduction
       url: process.env.DATABASE_URL, // Render usa esta variable
       ssl: { rejectUnauthorized: false },
       synchronize:
-        process.env.SYNCHRONIZE?.toLowerCase() === 'true' ? true : false, 
-      entities: [__dirname + '/../**/*.entity{.ts,.js}'],
+        process.env.SYNCHRONIZE?.toLowerCase() === 'true' ? true : false,
+      entities: [
+        User,
+        Address,
+        Category,
+        MessageEntity,
+        Country,
+        Region,
+        City,
+        Notification,
+        Payment,
+        Provider,
+        ProviderDocument,
+        Schedule,
+        ServiceOrder,
+        Service,
+      ],
       migrations: [__dirname + '/../migrations/*{.ts,.js}'],
       logging: false,
     }
