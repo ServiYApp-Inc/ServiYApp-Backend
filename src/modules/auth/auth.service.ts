@@ -449,9 +449,14 @@ export class AuthService {
 
     // Determinar URL de redirección según si completó el registro o no
     const base = process.env.FRONTEND_BASE_URL;
-    const redirectUrl = provider.isCompleted
-      ? `${base}/provider/dashboard?id=${provider.id}&role=${payload.role}&token=${token}`
-      : `${base}/complete-register-provider/?id=${provider.id}&role=${payload.role}&token=${token}`;
+    const redirectUrl = provider.status === ProviderStatus.INCOMPLETE
+    ? `${base}/complete-register-provider/?id=${provider.id}&role=${payload.role}&token=${token}`
+    : `${base}/provider/dashboard?id=${provider.id}&role=${payload.role}&token=${token}`;
+
+    
+    // const redirectUrl = provider.isCompleted
+      // ? `${base}/provider/dashboard?id=${provider.id}&role=${payload.role}&token=${token}`
+      // : `${base}/complete-register-provider/?id=${provider.id}&role=${payload.role}&token=${token}`;
 
     console.log('Redirigiendo al frontend:', redirectUrl);
     return { redirectUrl };
