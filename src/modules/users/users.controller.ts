@@ -9,6 +9,9 @@ import {
   Req,
   ForbiddenException,
   Query,
+  UseInterceptors,
+  ParseUUIDPipe,
+  UploadedFile,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -18,7 +21,8 @@ import { Roles } from 'src/modules/auth/decorators/roles.decorator';
 import { Role } from 'src/modules/auth/roles.enum';
 import { UserStatus } from './enums/user-status.enum';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
-
+import { FileInterceptor } from '@nestjs/platform-express';
+import { CloudinaryService } from 'src/modules/cloudinary/cloudinary.service';
 
 
 // Controlador encargado de la gestión de usuarios.
@@ -26,8 +30,51 @@ import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagg
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly cloudinaryService: CloudinaryService,
+  ) {}
 
+
+
+  @UseGuards(JwtAuthGuard)
+  @Patch(':id/upload-profile')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadProfilePicture(
+    @Param('id', ParseUUIDPipe) id: string,
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req,
+  ) {
+    const requester = req.user; // viene del token JWT
+
+    // Permitir si el usuario sube su propia foto
+    const isSelf = requester.id === id;
+
+    // Permitir si es administrador
+    const isAdmin = requester.role === Role.Admin;
+
+    if (!isSelf && !isAdmin) {
+      throw new ForbiddenException('No tienes permisos para modificar esta foto de perfil');
+    }
+
+    // Subir imagen a Cloudinary
+    const uploadResult = await this.cloudinaryService.uploadImage(file);
+
+    // Actualizar en la BD
+    const user = await this.usersService.update(id, {
+      profilePicture: uploadResult.secure_url,
+    });
+
+    return {
+      message: isAdmin
+        ? 'Foto de perfil actualizada por el administrador'
+        : 'Tu foto de perfil se actualizó correctamente',
+      profilePicture: uploadResult.secure_url,
+      user,
+    };
+  }
+
+  
   // Listar todos los usuarios (solo administrador).
   @ApiBearerAuth()
   @Get()

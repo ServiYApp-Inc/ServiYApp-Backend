@@ -9,6 +9,9 @@ import {
   Req,
   ForbiddenException,
   Query,
+  UseInterceptors,
+  BadRequestException,
+  UploadedFile,
 } from '@nestjs/common';
 import { ProvidersService } from './providers.service';
 import { JwtAuthGuard } from 'src/modules/auth/guards/jwt-auth.guard';
@@ -19,6 +22,9 @@ import { ProviderStatus } from './enums/provider-status.enum';
 import { UpdateProviderDto } from './dto/update-provider.dto';
 import { AuthService } from 'src/modules/auth/auth.service';
 import { ApiBearerAuth } from '@nestjs/swagger';
+import { CloudinaryService } from 'src/modules/cloudinary/cloudinary.service';
+import { FileInterceptor } from '@nestjs/platform-express';
+
 
 @Controller('providers')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -26,8 +32,46 @@ export class ProvidersController {
   constructor(
     private readonly providersService: ProvidersService,
     private readonly authService: AuthService, 
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
+
+  @Patch(':id/upload-profile')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadProfilePicture(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req,
+  ) {
+    if (!file) {
+      throw new BadRequestException('No se ha proporcionado ningún archivo');
+    }
+
+    const user = req.user; // usuario autenticado desde JWT
+
+    // Solo puede actualizar su propio perfil o ser admin
+    if (user.role !== Role.Admin && user.id !== id) {
+      throw new BadRequestException('No tienes permisos para actualizar esta foto');
+    }
+
+    // Subir a Cloudinary
+    const uploadResult = await this.cloudinaryService.uploadImage(file, 'serviyapp/providers');
+
+    // Actualizar el perfil del proveedor
+    const updatedProvider = await this.providersService.update(id, {
+      profilePicture: uploadResult.secure_url,
+    });
+
+    return {
+      message: 'Foto de perfil del proveedor actualizada correctamente',
+      profilePicture: uploadResult.secure_url,
+      provider: updatedProvider,
+    };
+  }
+
+
+  
   // Aprobar o rechazar documentos de un proveedor (solo admin)
   @Patch(':id/validate')
   @Roles(Role.Admin)

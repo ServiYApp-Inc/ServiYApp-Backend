@@ -7,6 +7,8 @@ import { Address } from '../addresses/entities/address.entity';
 import { AuthModule } from '../auth/auth.module';
 import { UsersSeed } from './seeds/users.seed';
 import { LocationsModule } from '../locations/locations.module';
+import { CloudinaryModule } from '../cloudinary/cloudinary.module';
+
 
 // Módulo encargado de la gestión de usuarios.
 // Incluye controladores, servicios, entidades y precarga inicial (seed).
@@ -15,6 +17,7 @@ import { LocationsModule } from '../locations/locations.module';
     TypeOrmModule.forFeature([User, Address]),
     forwardRef(() => AuthModule), // Evita dependencias circulares entre Auth y Users.
     LocationsModule,
+    CloudinaryModule,
   ],
   controllers: [UsersController],
   providers: [UsersService, UsersSeed],
