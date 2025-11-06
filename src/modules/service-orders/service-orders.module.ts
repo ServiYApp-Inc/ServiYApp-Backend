@@ -3,10 +3,17 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ServiceOrdersService } from './service-orders.service';
 import { ServiceOrdersController } from './service-orders.controller';
 import { ServiceOrder } from './entities/service-order.entity';
+import { Address } from '../addresses/entities/address.entity';
+import { Provider } from '../providers/entities/provider.entity';
+import { Service } from '../services/entities/service.entity';
+import { User } from '../users/entities/user.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([ServiceOrder])],
+  imports: [
+    TypeOrmModule.forFeature([ServiceOrder, Provider, User, Service, Address]),
+  ],
   controllers: [ServiceOrdersController],
   providers: [ServiceOrdersService],
+  exports: [ServiceOrdersService],
 })
 export class ServiceOrdersModule {}
