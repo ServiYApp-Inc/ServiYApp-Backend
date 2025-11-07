@@ -88,7 +88,20 @@ export class ServicesController {
     return this.servicesService.findOnePublic(id);
   }
 
+
   // PROTEGIDOS
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get('provider/:providerId')
+  @Roles(Role.Admin, Role.Provider)
+  async findByProvider(
+    @Param('providerId') providerId: string,
+    @Req() req,
+  ) {
+    return this.servicesService.findByProvider(providerId, req.user);
+  }
+
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Post('create')
@@ -105,20 +118,28 @@ export class ServicesController {
     return this.servicesService.update(id, dto, req.user);
   }
 
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @Patch('deactivate/:id')
   @Roles(Role.Provider, Role.Admin)
   deactivate(@Param('id') id: string, @Req() req) {
     return this.servicesService.changeStatus(id, req.user, ServiceStatus.INACTIVE);
   }
 
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @Patch('activate/:id')
   @Roles(Role.Provider, Role.Admin)
   activate(@Param('id') id: string, @Req() req) {
     return this.servicesService.changeStatus(id, req.user, ServiceStatus.ACTIVE);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Patch('status/:id')
+  @Roles(Role.Provider, Role.Admin)
+  async changeStatus(
+    @Param('id') id: string,
+    @Body('status') status: ServiceStatus,
+    @Req() req,
+  ) {
+    return this.servicesService.changeStatus(id, req.user, status);
   }
 }
 
