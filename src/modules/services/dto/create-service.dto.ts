@@ -8,6 +8,8 @@ import {
   Min,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { Column } from 'typeorm';
+import { ServiceStatus } from '../enums/service-status.enum';
 
 // DTO para la creación de un nuevo servicio.
 // Valida los campos obligatorios y opcionales antes de registrar el servicio.
@@ -27,10 +29,8 @@ export class CreateServiceDto {
   @IsOptional()
   photo?: string;
 
-  @ApiProperty({ example: true })
-  @IsBoolean({ message: 'El estado debe ser un valor booleano (true o false)' })
-  @IsOptional()
-  status?: boolean;
+  @Column({ type: 'enum', enum: ServiceStatus, default: ServiceStatus.ACTIVE, })
+  status: ServiceStatus;
 
   @ApiProperty({ example: 60 })
   @IsInt({ message: 'La duración debe ser un número entero en minutos' })
@@ -42,6 +42,9 @@ export class CreateServiceDto {
   @IsUUID('4', { message: 'El ID del proveedor debe ser un UUID válido' })
   @IsNotEmpty({ message: 'El proveedor es obligatorio' })
   providerId: string;
+  
+  @Column({ type: 'decimal', nullable: false})
+  price: number;
 
   @ApiProperty({ example: '' })
   @IsUUID('4', { message: 'El ID de la categoría debe ser un UUID válido' })

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Service } from './entities/service.entity';
@@ -20,6 +20,32 @@ export class ServicesService {
     private readonly categoryRepository: Repository<Category>,
   ) {}
 
+
+  // Ver todos los servicios de un proveedor específico
+  async findByProvider(providerId: string, user: any): Promise<Service[]> {
+    // Si el usuario es proveedor, solo puede ver los suyos
+    if (user.role === Role.Provider && user.id !== providerId) {
+      throw new ForbiddenException('No tienes permiso para ver estos servicios.');
+    }
+
+    // Verificar que el proveedor exista
+    const provider = await this.providerRepository.findOne({
+      where: { id: providerId },
+    });
+
+    if (!provider) throw new NotFoundException('Proveedor no encontrado');
+
+    // Buscar servicios asociados
+    const services = await this.serviceRepository.find({
+      where: { provider: { id: providerId } },
+      relations: ['category', 'provider'],
+      order: { createdAt: 'DESC' },
+    });
+
+    return services;
+  }
+
+
   // Crear un nuevo servicio
   async create(dto: CreateServiceDto, user: any): Promise<Service> {
     const provider = user.role === Role.Admin
@@ -33,15 +59,16 @@ export class ServicesService {
     });
     if (!category) throw new NotFoundException('Categoría no encontrada');
 
-    const service = this.serviceRepository.create({
-      name: dto.name,
-      description: dto.description,
-      photo: dto.photo,
-      duration: dto.duration,
-      provider,
-      category,
-      status: ServiceStatus.ACTIVE,
-    });
+  const service = this.serviceRepository.create({
+    name: dto.name,
+    description: dto.description,
+    photo: dto.photo,
+    duration: dto.duration,
+    price: dto.price,
+    provider,
+    category,
+    status: ServiceStatus.ACTIVE,
+  });
 
     return await this.serviceRepository.save(service);
   }
@@ -88,35 +115,36 @@ export class ServicesService {
   }
 
   async filteredFind(
-    { region, city, category, serviceName },
-    page?: number,
-    limit?: number,
+    filters: { region?: string; city?: string; category?: string; serviceName?: string },
+    page = 1,
+    limit = 10,
   ): Promise<Service[]> {
-    const services = await this.serviceRepository.find({
-      relations: [
-        'provider',
-        'provider.region',
-        'provider.city',
-        'category'
-      ],
-      where: { status: ServiceStatus.ACTIVE }
-    });
+    const query = this.serviceRepository
+      .createQueryBuilder('service')
+      .leftJoinAndSelect('service.provider', 'provider')
+      .leftJoinAndSelect('provider.region', 'region')
+      .leftJoinAndSelect('provider.city', 'city')
+      .leftJoinAndSelect('service.category', 'category')
+      .where('service.status = :status', { status: ServiceStatus.ACTIVE });
 
-    const filtered = services.filter(service => {
-      const matchesRegion = region ? service.provider.region?.name === region : true;
-      const matchesCity = city ? service.provider.city?.name === city : true;
-      const matchesCategory = category ? service.category?.name === category : true;
-      const matchesService = serviceName ? service.name.toLowerCase().includes(serviceName.toLowerCase()) : true;
-      return matchesRegion && matchesCity && matchesCategory && matchesService;
-    });
+    if (filters.region) {
+      query.andWhere('region.name ILIKE :region', { region: `%${filters.region}%` });
+    }
+    if (filters.city) {
+      query.andWhere('city.name ILIKE :city', { city: `%${filters.city}%` });
+    }
+    if (filters.category) {
+      query.andWhere('category.name ILIKE :category', { category: `%${filters.category}%` });
+    }
+    if (filters.serviceName) {
+      query.andWhere('service.name ILIKE :serviceName', { serviceName: `%${filters.serviceName}%` });
+    }
 
-    if (page && limit) {
-      const start = (page - 1) * limit;
-      const end = start + limit;
-      return filtered.slice(start, end);
-    };
+    query.orderBy('service.createdAt', 'DESC')
+        .skip((page - 1) * limit)
+          .take(limit);
 
-    return filtered;
+    return await query.getMany();
   }
 
   // Buscar por ID (control de acceso)
@@ -146,10 +174,13 @@ export class ServicesService {
     return service;
   }
 
-  // Actualizar (admin o propietario)
+  // Actualizar servicio (solo admin o propietario)
   async update(id: string, dto: UpdateServiceDto, user: any): Promise<Service> {
+    // Buscar el servicio y validar permisos
     const service = await this.findOne(id, user);
+    if (!service) throw new NotFoundException('Servicio no encontrado');
 
+    // Si el admin cambia el proveedor
     if (dto.providerId && user.role === Role.Admin) {
       const provider = await this.providerRepository.findOne({
         where: { id: dto.providerId },
@@ -158,6 +189,7 @@ export class ServicesService {
       service.provider = provider;
     }
 
+    // Si se cambia la categoría
     if (dto.categoryId) {
       const category = await this.categoryRepository.findOne({
         where: { id: dto.categoryId },
@@ -166,14 +198,48 @@ export class ServicesService {
       service.category = category;
     }
 
-    Object.assign(service, dto);
+    // Actualizar campos definidos
+    if (dto.name !== undefined) service.name = dto.name;
+    if (dto.description !== undefined) service.description = dto.description;
+    if (dto.photo !== undefined) service.photo = dto.photo;
+    if (dto.duration !== undefined) service.duration = dto.duration;
+    if (dto.price !== undefined) service.price = dto.price;
+
+    // Aquí agregamos el manejo del enum de estado
+    if (dto.status !== undefined) {
+      // Verificamos que el valor esté dentro del enum
+      if (!Object.values(ServiceStatus).includes(dto.status)) {
+        throw new BadRequestException(
+          `Estado inválido. Debe ser: ${Object.values(ServiceStatus).join(', ')}.`,
+        );
+      }
+      service.status = dto.status;
+    }
+
+    // Guardar cambios
     return await this.serviceRepository.save(service);
   }
 
-  // Cambiar estado (activar/desactivar)
-  async changeStatus(id: string, user: any, status: ServiceStatus): Promise<Service> {
+
+  // Cambiar estado (activar/desactivar o eliminar lógicamente)
+  async changeStatus(
+    id: string,
+    user: any,
+    status: ServiceStatus,
+  ): Promise<Service> {
     const service = await this.findOne(id, user);
+    if (!service) throw new NotFoundException('Servicio no encontrado');
+
+    // Solo admin o propietario pueden hacerlo (ya se valida en findOne)
     service.status = status;
     return await this.serviceRepository.save(service);
   }
+
+  async countByStatus(): Promise<any> {
+    const active = await this.serviceRepository.count({ where: { status: ServiceStatus.ACTIVE } });
+    const inactive = await this.serviceRepository.count({ where: { status: ServiceStatus.INACTIVE } });
+    return { active, inactive };
+  }
+
+
 }
