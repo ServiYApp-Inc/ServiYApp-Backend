@@ -17,6 +17,7 @@ import { SeedsModule } from './modules/seeds/seeds.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ChatModule } from './modules/chat/chat.module';
+import { AddressesModule } from './modules/addresses/addresses.module';
 
 @Module({
   imports: [
@@ -52,7 +53,8 @@ import { ChatModule } from './modules/chat/chat.module';
     NotificationsModule,
 
     ChatModule,
-
+    AddressesModule,
+    
   ],
   controllers: [AppController],
   providers: [AppService],
