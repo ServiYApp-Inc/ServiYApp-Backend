@@ -18,6 +18,7 @@ import { PaymentsModule } from './modules/payments/payments.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { AddressesModule } from './modules/addresses/addresses.module';
+import { ChatControlModule } from './modules/chat-control/chat-control.module';
 
 @Module({
   imports: [
@@ -45,16 +46,12 @@ import { AddressesModule } from './modules/addresses/addresses.module';
     LocationsModule, 
     ServicesModule,
     ServiceOrdersModule,
-
     SeedsModule,
-
     PaymentsModule,
-
     NotificationsModule,
-
     ChatModule,
     AddressesModule,
-    
+    ChatControlModule,  
   ],
   controllers: [AppController],
   providers: [AppService],
