@@ -47,13 +47,12 @@ export class PaymentsController {
           email: createPaymentDto.payerEmail,
         },
         back_urls: {
-          success: 'https://3t9zc8rg-3000.use.devtunnels.ms/payments/success',
-          failure: 'https://3t9zc8rg-3000.use.devtunnels.ms/payments/failure',
-          pending: 'https://3t9zc8rg-3000.use.devtunnels.ms/payments/pending',
+          success: `${process.env.FRONTEND_URL}/payments/success`,
+          failure: `${process.env.FRONTEND_URL}/payments/failure`,
+          pending: `${process.env.FRONTEND_URL}/payments/pending`,
         },
         external_reference: 'user_123456',
-        notification_url:
-          'https://3t9zc8rg-4000.use.devtunnels.ms/payments/webhook',
+        notification_url: `${process.env.BACKEND_URL}/payments/webhook`,
         auto_return: 'approved',
         binary_mode: true,
       };
