@@ -118,12 +118,16 @@ export class ServicesController {
     return this.servicesService.update(id, dto, req.user);
   }
 
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Patch('deactivate/:id')
   @Roles(Role.Provider, Role.Admin)
   deactivate(@Param('id') id: string, @Req() req) {
     return this.servicesService.changeStatus(id, req.user, ServiceStatus.INACTIVE);
   }
 
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Patch('activate/:id')
   @Roles(Role.Provider, Role.Admin)
   activate(@Param('id') id: string, @Req() req) {
