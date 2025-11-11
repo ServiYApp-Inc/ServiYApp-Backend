@@ -1,26 +1,73 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Payment } from './entities/payment.entity';
 import { CreatePaymentDto } from './dto/create-payment.dto';
-import { UpdatePaymentDto } from './dto/update-payment.dto';
+import { ServiceOrder } from '../service-orders/entities/service-order.entity';
 
 @Injectable()
 export class PaymentsService {
-  create(createPaymentDto: CreatePaymentDto) {
-    return 'This action adds a new payment';
+  constructor(
+    @InjectRepository(Payment)
+    private readonly paymentsRepository: Repository<Payment>,
+
+    @InjectRepository(ServiceOrder)
+    private readonly serviceOrdersRepository: Repository<ServiceOrder>,
+  ) {}
+
+  /**
+   * 🧾 Crear un nuevo registro de pago
+   */
+  async create(createPaymentDto: CreatePaymentDto): Promise<Payment> {
+    const { serviceOrderId, ...paymentData } = createPaymentDto;
+
+    // Verificar que la orden de servicio exista
+    const serviceOrder = await this.serviceOrdersRepository.findOne({
+      where: { id: serviceOrderId },
+    });
+
+    if (!serviceOrder) {
+      throw new NotFoundException('Service order not found');
+    }
+
+    // Crear el registro de pago
+    const newPayment = this.paymentsRepository.create({
+      ...paymentData,
+      serviceOrder,
+    });
+
+    return this.paymentsRepository.save(newPayment);
   }
 
-  findAll() {
-    return `This action returns all payments`;
+  /**
+   * 📄 Obtener un pago por ID
+   */
+  async findOne(id: string): Promise<Payment> {
+    const payment = await this.paymentsRepository.findOne({
+      where: { id },
+      relations: ['serviceOrder'],
+    });
+
+    if (!payment) {
+      throw new NotFoundException(`Payment with ID ${id} not found`);
+    }
+
+    return payment;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} payment`;
+  /**
+   * 🔍 Obtener todos los pagos (opcional)
+   */
+  async findAll(): Promise<Payment[]> {
+    return this.paymentsRepository.find({ relations: ['serviceOrder'] });
   }
 
-  update(id: number, updatePaymentDto: UpdatePaymentDto) {
-    return `This action updates a #${id} payment`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} payment`;
+  /**
+   * 🔄 Actualizar el estado del pago
+   */
+  async updateStatus(id: string, status: string): Promise<Payment> {
+    const payment = await this.findOne(id);
+    payment.status = status;
+    return this.paymentsRepository.save(payment);
   }
 }
