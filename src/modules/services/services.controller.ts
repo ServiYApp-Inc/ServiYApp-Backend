@@ -27,19 +27,15 @@ export class ServicesController {
 
   // PÚBLICOS
   @Get('find-all')
-  findAll() {
-    return this.servicesService.findAllPublic();
+  async findAll(@Req() req) {
+    return this.servicesService.findAllPublic(req.user);
   }
 
   @Get('find-all-paged')
   @ApiQuery({ name: 'page', required: false, type: String })
   @ApiQuery({ name: 'limit', required: false, type: String })
-  findAllPaged(@Query('page') page?: string, @Query('limit') limit?: string) {
-    if (limit && page) {
-      return this.servicesService.findAllPaged(+page, +limit)
-    }
-    
-    return this.servicesService.findAllPublic();
+  async findAllPaged(@Req() req, @Query('page') page = 1, @Query('limit') limit = 5) {
+    return this.servicesService.findAllPaged(req.user, page, limit);
   }
 
   // Ordenar por Parametro ('price' o 'duration')
