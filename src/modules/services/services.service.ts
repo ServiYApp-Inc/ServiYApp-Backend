@@ -8,6 +8,7 @@ import { Provider } from '../providers/entities/provider.entity';
 import { Category } from '../categories/entities/category.entity';
 import { Role } from '../auth/roles.enum';
 import { ServiceStatus } from './enums/service-status.enum';
+import { User } from '../users/entities/user.entity';
 
 @Injectable()
 export class ServicesService {
@@ -74,24 +75,35 @@ export class ServicesService {
   }
 
   // Ver todos los servicios (admin o proveedor)
-  async findAllPublic(): Promise<Service[]> {
-    return await this.serviceRepository.find({
-      relations: ['provider', 'category'],
-      order: { createdAt: 'DESC' },
-    });
+  async findAllPublic(user: User): Promise<Service[]> {
+    const query = this.serviceRepository.createQueryBuilder('service')
+      .leftJoinAndSelect('service.provider', 'provider')
+      .leftJoinAndSelect('service.category', 'category')
+      .orderBy('service.createdAt', 'DESC');
+
+    // Si el usuario no es admin, filtrar por país
+    if (user.role !== 'admin') {
+      query.where('provider.country = :country', { country: user.country });
+    }
+
+    return await query.getMany();
   }
 
   // Ver todos los servicios paginados
-  async findAllPaged(page: number = 1, limit: number = 5): Promise<Service[]> {
-    let services = await this.serviceRepository.find({
-      relations: ['provider', 'category'],
-      order: { createdAt: 'DESC' },
-    });
+  async findAllPaged(user: User, page: number = 1, limit: number = 5): Promise<Service[]> {
+    const query = this.serviceRepository.createQueryBuilder('service')
+      .leftJoinAndSelect('service.provider', 'provider')
+      .leftJoinAndSelect('service.category', 'category')
+      .orderBy('service.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit);
 
-    const start = (page-1) * limit;
-    const end = start + limit;
+    // Si el usuario no es admin, filtrar por país
+    if (user.role !== 'admin') {
+      query.where('provider.country = :country', { country: user.country });
+    }
 
-    return (services = services.slice(start, end))
+    return await query.getMany();
   }
 
   // Ordenar por Parametro ('price' o 'duration')
