@@ -12,7 +12,7 @@ export class MercadoPagoService {
     const accessToken = this.configService.get<string>(
       'MERCADOPAGO_ACCESS_TOKEN',
     );
-    console.log(accessToken);
+
     if (!accessToken) {
       throw new Error(
         '❌ MERCADOPAGO_ACCESS_TOKEN no está definido en las variables de entorno',
