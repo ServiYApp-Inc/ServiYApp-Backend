@@ -8,6 +8,7 @@ import {
   UseGuards,
   Req,
   Query,
+  Delete,
 } from '@nestjs/common';
 import { ServicesService } from './services.service';
 import { CreateServiceDto } from './dto/create-service.dto';
@@ -25,16 +26,29 @@ import { Service } from './entities/service.entity';
 export class ServicesController {
   constructor(private readonly servicesService: ServicesService) {}
 
+
+
   // PÚBLICOS
   @Get('find-all')
-  async findAll(@Req() req) {
-    return this.servicesService.findAllPublic(req.user);
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  async findAllPublic(
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+  ) {
+    return this.servicesService.findAllPublicPaginated(page, limit);
   }
 
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @Get('find-all-paged')
-  @ApiQuery({ name: 'page', required: false, type: String })
-  @ApiQuery({ name: 'limit', required: false, type: String })
-  async findAllPaged(@Req() req, @Query('page') page = 1, @Query('limit') limit = 5) {
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  async findAllPaged(
+    @Req() req,
+    @Query('page') page = 1,
+    @Query('limit') limit = 5,
+  ) {
     return this.servicesService.findAllPaged(req.user, page, limit);
   }
 
@@ -86,6 +100,32 @@ export class ServicesController {
 
 
   // PROTEGIDOS
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Patch('approve/:id')
+  @Roles(Role.Admin)
+  async approveService(@Param('id') id: string, @Req() req) {
+    // Cambia el estado a ACTIVE
+    return this.servicesService.changeStatus(id, req.user, ServiceStatus.ACTIVE);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Delete('delete/:id')
+  @Roles(Role.Admin)
+  async deleteService(@Param('id') id: string) {
+    // Elimina el servicio físicamente
+    return this.servicesService.deleteService(id);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get('pending')
+  @Roles(Role.Admin) 
+  async findAllPending() {
+    return this.servicesService.findAllPending();
+  }
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)

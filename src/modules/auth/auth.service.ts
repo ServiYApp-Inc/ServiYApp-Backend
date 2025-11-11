@@ -69,7 +69,7 @@ export class AuthService {
     );
 
     // Generar el token JWT
-    const payload = { id: newUser.id, email: newUser.email, role: newUser.role };
+    const payload = { id: newUser.id, email: newUser.email, role: newUser.role, country: newUser.country?.name || newUser.country };
     const token = this.jwtService.sign(payload, { expiresIn: '30m' });
 
     // Respuesta limpia y estructurada
@@ -176,7 +176,7 @@ export class AuthService {
     await this.usersService.save(user);
 
     // Generar nuevo token JWT
-    const payload = { id: user.id, email: user.email, role: user.role };
+    const payload = { id: user.id, email: user.email, role: user.role, country: user.country?.name || user.country, };
     const token = this.jwtService.sign(payload, { expiresIn: '30m' });
 
     return {
@@ -219,7 +219,7 @@ export class AuthService {
       await this.usersService.save(user);
     }
 
-    const payload = { id: user.id, email: user.email, role: user.role };
+    const payload = { id: user.id, email: user.email, role: user.role,   country: user.country?.name || user.country, };
     return {
       message: 'Usuario autenticado correctamente',
       access_token: this.jwtService.sign(payload, { expiresIn: '30m' }),
@@ -253,7 +253,7 @@ export class AuthService {
     }
 
     // Generar token de acceso
-    const payload = { id: user.id, email: user.email, role: user.role };
+    const payload = { id: user.id, email: user.email, role: user.role, country: user.country?.name || user.country, };
     const token = this.jwtService.sign(payload, { expiresIn: '30m' });
 
     return {

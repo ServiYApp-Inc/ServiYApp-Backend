@@ -68,43 +68,74 @@ export class ServicesService {
     price: dto.price,
     provider,
     category,
-    status: ServiceStatus.ACTIVE,
+    status: ServiceStatus.PENDING,
   });
 
     return await this.serviceRepository.save(service);
   }
 
-  // Ver todos los servicios (admin o proveedor)
-  async findAllPublic(user: User): Promise<Service[]> {
-    const query = this.serviceRepository.createQueryBuilder('service')
+
+  // Ver todos los servicios pendientes (solo para administrador)
+  async findAllPending(): Promise<Service[]> {
+    const query = this.serviceRepository
+      .createQueryBuilder('service')
       .leftJoinAndSelect('service.provider', 'provider')
       .leftJoinAndSelect('service.category', 'category')
+      .where('service.status = :status', { status: ServiceStatus.PENDING })
       .orderBy('service.createdAt', 'DESC');
-
-    // Si el usuario no es admin, filtrar por país
-    if (user.role !== 'admin') {
-      query.where('provider.country = :country', { country: user.country });
-    }
 
     return await query.getMany();
   }
 
-  // Ver todos los servicios paginados
-  async findAllPaged(user: User, page: number = 1, limit: number = 5): Promise<Service[]> {
+  // Eliminar completamente un servicio (solo admin)
+  async deleteService(id: string): Promise<{ message: string }> {
+    const service = await this.serviceRepository.findOne({ where: { id } });
+    if (!service) throw new NotFoundException('Servicio no encontrado');
+
+    await this.serviceRepository.remove(service);
+    return { message: `El servicio "${service.name}" fue eliminado correctamente.` };
+  }
+
+  // Ver todos los servicios (admin o proveedor)
+  async findAllPublicPaginated(page = 1, limit = 10): Promise<Service[]> {
     const query = this.serviceRepository.createQueryBuilder('service')
       .leftJoinAndSelect('service.provider', 'provider')
       .leftJoinAndSelect('service.category', 'category')
+      .where('service.status = :status', { status: ServiceStatus.ACTIVE })
       .orderBy('service.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit);
 
-    // Si el usuario no es admin, filtrar por país
-    if (user.role !== 'admin') {
-      query.where('provider.country = :country', { country: user.country });
+    return await query.getMany();
+  }
+
+  // Ver todos los servicios paginados del mismo país que el usuario
+  async findAllPaged(user: User, page = 1, limit = 5): Promise<Service[]> {
+    if (!user?.country) {
+      throw new BadRequestException('No se pudo determinar el país del usuario.');
     }
+
+    // Si user.country es un objeto o un string, tomamos el nombre del país
+    const countryName =
+      typeof user.country === 'object'
+        ? user.country.name
+        : user.country;
+
+    const query = this.serviceRepository
+      .createQueryBuilder('service')
+      .leftJoinAndSelect('service.provider', 'provider')
+      .leftJoinAndSelect('provider.country', 'country') // 🔹 JOIN directo con la tabla de países
+      .leftJoinAndSelect('service.category', 'category')
+      .where('service.status = :status', { status: ServiceStatus.ACTIVE })
+      .andWhere('country.name = :countryName', { countryName }) // 🔹 Filtramos por nombre del país
+      .orderBy('service.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit);
 
     return await query.getMany();
   }
+
+
 
   // Ordenar por Parametro ('price' o 'duration')
   async findAllBy(
