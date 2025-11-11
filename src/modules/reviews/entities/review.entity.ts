@@ -1,0 +1,70 @@
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  CreateDateColumn,
+  JoinColumn,
+} from 'typeorm';
+import { User } from '../../users/entities/user.entity';
+import { Provider } from '../../providers/entities/provider.entity';
+import { ServiceOrder } from '../../service-orders/entities/service-order.entity';
+
+@Entity('reviews')
+export class Review {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  // --- Relaciones de autor ---
+  @Column({ type: 'uuid', nullable: true })
+  authorUserId?: string;
+
+  @Column({ type: 'uuid', nullable: true })
+  authorProviderId?: string;
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'authorUserId' })
+  authorUser?: User;
+
+  @ManyToOne(() => Provider, { nullable: true })
+  @JoinColumn({ name: 'authorProviderId' })
+  authorProvider?: Provider;
+
+  // --- Relaciones de destino ---
+  @Column({ type: 'uuid', nullable: true })
+  targetUserId?: string;
+
+  @Column({ type: 'uuid', nullable: true })
+  targetProviderId?: string;
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'targetUserId' })
+  targetUser?: User;
+
+  @ManyToOne(() => Provider, { nullable: true })
+  @JoinColumn({ name: 'targetProviderId' })
+  targetProvider?: Provider;
+
+  // --- Orden ---
+  @ManyToOne(() => ServiceOrder, (order) => order.reviews, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'orderId' })
+  order: ServiceOrder;
+
+  @Column()
+  orderId: string;
+
+  // --- Datos de review ---
+  @Column({ type: 'int', width: 1 })
+  rating: number;
+
+  @Column({ type: 'text', nullable: true })
+  comment?: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  photoUrl?: string;
+
+  @CreateDateColumn()
+  createdAt: Date;
+}

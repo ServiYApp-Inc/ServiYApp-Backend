@@ -12,6 +12,7 @@ import { User } from 'src/modules/users/entities/user.entity';
 import { Service } from 'src/modules/services/entities/service.entity';
 import { Address } from 'src/modules/addresses/entities/address.entity';
 import { Payment } from 'src/modules/payments/entities/payment.entity';
+import { Review } from 'src/modules/reviews/entities/review.entity';
 
 @Entity({ name: 'service_orders' })
 export class ServiceOrder {
@@ -43,4 +44,9 @@ export class ServiceOrder {
 
   @OneToMany(() => Payment, (payment) => payment.serviceOrder)
   payments: Payment[];
+
+  @OneToMany(() => Review, (review) => review.order, {
+    cascade: true,
+  })
+  reviews: Review[];
 }
