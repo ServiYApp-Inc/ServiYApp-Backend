@@ -24,10 +24,16 @@ export class CreateServiceDto {
   @IsOptional()
   description?: string;
 
-  @ApiProperty({ example:'https://example.com/imagen.jpg' })
-  @IsString({ message: 'La URL de la foto debe ser una cadena de texto' })
+  @ApiProperty({
+    example: [
+      'https://example.com/img1.jpg',
+      'https://example.com/img2.jpg'
+    ],
+    description: 'URLs de las fotos del servicio (máximo 5)',
+  })
   @IsOptional()
-  photo?: string;
+  @IsString({ each: true, message: 'Cada URL debe ser una cadena de texto' })
+  photos?: string[];
 
   @Column({ type: 'enum', enum: ServiceStatus, default: ServiceStatus.ACTIVE, })
   status: ServiceStatus;

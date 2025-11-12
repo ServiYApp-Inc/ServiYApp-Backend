@@ -9,6 +9,7 @@ import { Category } from '../categories/entities/category.entity';
 import { Role } from '../auth/roles.enum';
 import { ServiceStatus } from './enums/service-status.enum';
 import { User } from '../users/entities/user.entity';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 @Injectable()
 export class ServicesService {
@@ -19,6 +20,7 @@ export class ServicesService {
     private readonly providerRepository: Repository<Provider>,
     @InjectRepository(Category)
     private readonly categoryRepository: Repository<Category>,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
 
@@ -48,7 +50,7 @@ export class ServicesService {
 
 
   // Crear un nuevo servicio
-  async create(dto: CreateServiceDto, user: any): Promise<Service> {
+  async create(dto: CreateServiceDto, user: any, files?: Express.Multer.File[]): Promise<Service> {
     const provider = user.role === Role.Admin
       ? await this.providerRepository.findOne({ where: { id: dto.providerId } })
       : await this.providerRepository.findOne({ where: { email: user.email } });
@@ -60,19 +62,50 @@ export class ServicesService {
     });
     if (!category) throw new NotFoundException('Categoría no encontrada');
 
-  const service = this.serviceRepository.create({
-    name: dto.name,
-    description: dto.description,
-    photo: dto.photo,
-    duration: dto.duration,
-    price: dto.price,
-    provider,
-    category,
-    status: ServiceStatus.PENDING,
-  });
+    // Subir fotos a Cloudinary
+    let uploadedPhotos: string[] = [];
+    if (files?.length) {
+      uploadedPhotos = await this.cloudinaryService.uploadServiceImages(files);
+    }
+
+    const service = this.serviceRepository.create({
+      name: dto.name,
+      description: dto.description,
+      photos: uploadedPhotos,
+      duration: dto.duration,
+      price: dto.price,
+      provider,
+      category,
+      status: ServiceStatus.PENDING,
+    });
 
     return await this.serviceRepository.save(service);
   }
+  // async create(dto: CreateServiceDto, user: any): Promise<Service> {
+  //   const provider = user.role === Role.Admin
+  //     ? await this.providerRepository.findOne({ where: { id: dto.providerId } })
+  //     : await this.providerRepository.findOne({ where: { email: user.email } });
+
+  //   if (!provider) throw new NotFoundException('Proveedor no encontrado');
+
+  //   const category = await this.categoryRepository.findOne({
+  //     where: { id: dto.categoryId },
+  //   });
+  //   if (!category) throw new NotFoundException('Categoría no encontrada');
+
+  // const service = this.serviceRepository.create({
+  //   name: dto.name,
+  //   description: dto.description,
+  //   photo: dto.photo,
+  //   duration: dto.duration,
+  //   price: dto.price,
+  //   provider,
+  //   category,
+  //   status: ServiceStatus.PENDING,
+  // });
+
+  //   return await this.serviceRepository.save(service);
+  // }
 
 
   // Ver todos los servicios pendientes (solo para administrador)
@@ -218,8 +251,57 @@ export class ServicesService {
   }
 
   // Actualizar servicio (solo admin o propietario)
-  async update(id: string, dto: UpdateServiceDto, user: any): Promise<Service> {
-    // Buscar el servicio y validar permisos
+  // async update(id: string, dto: UpdateServiceDto, user: any): Promise<Service> {
+  //   // Buscar el servicio y validar permisos
+  //   const service = await this.findOne(id, user);
+  //   if (!service) throw new NotFoundException('Servicio no encontrado');
+
+  //   // Si el admin cambia el proveedor
+  //   if (dto.providerId && user.role === Role.Admin) {
+  //     const provider = await this.providerRepository.findOne({
+  //       where: { id: dto.providerId },
+  //     });
+  //     if (!provider) throw new NotFoundException('Proveedor no encontrado');
+  //     service.provider = provider;
+  //   }
+
+  //   // Si se cambia la categoría
+  //   if (dto.categoryId) {
+  //     const category = await this.categoryRepository.findOne({
+  //       where: { id: dto.categoryId },
+  //     });
+  //     if (!category) throw new NotFoundException('Categoría no encontrada');
+  //     service.category = category;
+  //   }
+
+  //   // Actualizar campos definidos
+  //   if (dto.name !== undefined) service.name = dto.name;
+  //   if (dto.description !== undefined) service.description = dto.description;
+  //   if (dto.photo !== undefined) service.photo = dto.photo;
+  //   if (dto.duration !== undefined) service.duration = dto.duration;
+  //   if (dto.price !== undefined) service.price = dto.price;
+
+  //   // Aquí agregamos el manejo del enum de estado
+  //   if (dto.status !== undefined) {
+  //     // Verificamos que el valor esté dentro del enum
+  //     if (!Object.values(ServiceStatus).includes(dto.status)) {
+  //       throw new BadRequestException(
+  //         `Estado inválido. Debe ser: ${Object.values(ServiceStatus).join(', ')}.`,
+  //       );
+  //     }
+  //     service.status = dto.status;
+  //   }
+
+  //   // Guardar cambios
+  //   return await this.serviceRepository.save(service);
+  // }
+
+  async update(
+    id: string,
+    dto: UpdateServiceDto,
+    user: any,
+    files?: Express.Multer.File[],
+  ): Promise<Service> {
     const service = await this.findOne(id, user);
     if (!service) throw new NotFoundException('Servicio no encontrado');
 
@@ -241,25 +323,32 @@ export class ServicesService {
       service.category = category;
     }
 
+    // Subir nuevas fotos (si las hay)
+    if (files?.length) {
+      const uploadedPhotos = await this.cloudinaryService.uploadServiceImages(files);
+      // Opción 1: reemplazar todas las fotos anteriores
+      // service.photos = uploadedPhotos;
+
+      // Opción 2: Permitir agregar sin borrar las anteriores:
+      service.photos = [...(service.photos || []), ...uploadedPhotos];
+    }
+
     // Actualizar campos definidos
     if (dto.name !== undefined) service.name = dto.name;
     if (dto.description !== undefined) service.description = dto.description;
-    if (dto.photo !== undefined) service.photo = dto.photo;
     if (dto.duration !== undefined) service.duration = dto.duration;
     if (dto.price !== undefined) service.price = dto.price;
 
-    // Aquí agregamos el manejo del enum de estado
+    // Verificar estado válido
     if (dto.status !== undefined) {
-      // Verificamos que el valor esté dentro del enum
       if (!Object.values(ServiceStatus).includes(dto.status)) {
         throw new BadRequestException(
-          `Estado inválido. Debe ser: ${Object.values(ServiceStatus).join(', ')}.`,
+          `Estado inválido. Debe ser uno de: ${Object.values(ServiceStatus).join(', ')}.`,
         );
       }
       service.status = dto.status;
     }
 
-    // Guardar cambios
     return await this.serviceRepository.save(service);
   }
 

@@ -1,4 +1,4 @@
-import { IsInt, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
+import { IsArray, IsInt, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
 
 export class CreateReviewDto {
   @IsUUID()
@@ -13,9 +13,11 @@ export class CreateReviewDto {
   @IsString()
   comment?: string;
 
+  // Acepta múltiples URLs
   @IsOptional()
-  @IsString()
-  photoUrl?: string;
+  @IsArray()
+  @IsString({ each: true })
+  photoUrl?: string[];
 
   @IsOptional()
   @IsUUID()

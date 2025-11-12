@@ -59,8 +59,9 @@ export class Review {
   @Column({ type: 'text', nullable: true })
   comment?: string;
 
-  @Column({ type: 'varchar', nullable: true })
-  photoUrl?: string;
+  // Array de URLs (hasta 5 fotos)
+  @Column({ type: 'text', array: true, nullable: true })
+  photoUrl?: string[] | null;
 
   @CreateDateColumn()
   createdAt: Date;
