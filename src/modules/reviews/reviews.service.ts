@@ -68,6 +68,22 @@ export class ReviewsService {
     const order = await this.orderRepo.findOne({ where: { id: dto.orderId } });
     if (!order) throw new NotFoundException('Orden no encontrada');
 
+    //Validar si ya existe review
+    const existingReviews = await this.reviewRepo.find({
+      where: { orderId: dto.orderId },
+    });
+
+    if (dto.authorUserId && existingReviews.some((r) => !!r.authorUserId)) {
+      throw new BadRequestException('El cliente ya calificó esta orden.');
+    }
+
+    if (
+      dto.authorProviderId &&
+      existingReviews.some((r) => !!r.authorProviderId)
+    ) {
+      throw new BadRequestException('El proveedor ya calificó esta orden.');
+    }
+
     const review = this.reviewRepo.create(dto);
     return await this.reviewRepo.save(review);
   }
@@ -75,7 +91,7 @@ export class ReviewsService {
   async findByProvider(providerId: string) {
     return await this.reviewRepo.find({
       where: { targetProviderId: providerId },
-      relations: ['authorUser', 'order'],
+      relations: ['authorUser', 'serviceOrders'],
       order: { createdAt: 'DESC' },
     });
   }
@@ -83,7 +99,7 @@ export class ReviewsService {
   async findByUser(userId: string) {
     return await this.reviewRepo.find({
       where: { targetUserId: userId },
-      relations: ['authorProvider', 'order'],
+      relations: ['authorProvider', 'serviceOrders'],
       order: { createdAt: 'DESC' },
     });
   }

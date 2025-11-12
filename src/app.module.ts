@@ -12,7 +12,7 @@ import { ProvidersModule } from './modules/providers/providers.module';
 import { ServicesModule } from './modules/services/services.module';
 import { CategoriesModule } from './modules/categories/categories.module';
 import { ServiceOrdersModule } from './modules/service-orders/service-orders.module';
-import { LocationsModule } from './modules/locations/locations.module'; 
+import { LocationsModule } from './modules/locations/locations.module';
 import { SeedsModule } from './modules/seeds/seeds.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
@@ -44,7 +44,7 @@ import { ReviewsModule } from './modules/reviews/reviews.module';
     UsersModule,
     ProvidersModule,
     CategoriesModule,
-    LocationsModule, 
+    LocationsModule,
     ServicesModule,
     ServiceOrdersModule,
     SeedsModule,
@@ -53,7 +53,7 @@ import { ReviewsModule } from './modules/reviews/reviews.module';
     ChatModule,
     AddressesModule,
     ChatControlModule,
-    ReviewsModule,  
+    ReviewsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
