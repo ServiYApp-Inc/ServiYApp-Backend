@@ -66,4 +66,51 @@ export class ChatService {
         }
         return result;
     }
+
+    async showChatList(userId: string): Promise<
+    {
+        lastMessage: MessageEntity,
+        participant: { type: 'user' | 'provider', data: User | Provider } | null
+    }[]
+> {
+    const messages = await this.messageRepository.find({
+        where: [
+            { senderId: userId },
+            { receiverId: userId }
+        ],
+        order: { time: 'DESC' }
+    });
+
+    const chatMap = new Map<string, MessageEntity>();
+
+    for (const msg of messages) {
+        const otherId = msg.senderId === userId ? msg.receiverId : msg.senderId;
+        if (!chatMap.has(otherId)) {
+            chatMap.set(otherId, msg); // Solo el último mensaje (por el orden DESC)
+        }
+    }
+
+    // Buscar info de usuario/proveedor para cada participante
+    const findUserOrProvider = async (
+        id: string
+    ): Promise<{ type: 'user'; data: User } | { type: 'provider'; data: Provider } | null> => {
+        let user = await this.userRepository.findOne({ where: { id } });
+        if (user) return { type: 'user', data: user };
+        let provider = await this.providerRepository.findOne({ where: { id } });
+        if (provider) return { type: 'provider', data: provider };
+        return null;
+    };
+
+    // Construir la respuesta
+    const result: {
+        lastMessage: MessageEntity,
+        participant: { type: 'user' | 'provider', data: User | Provider } | null
+    }[] = [];
+    for (const [otherId, lastMessage] of chatMap.entries()) {
+        const participant = await findUserOrProvider(otherId);
+        result.push({ lastMessage, participant });
+    }
+
+    return result;
+}
 }

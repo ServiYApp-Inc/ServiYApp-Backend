@@ -1,11 +1,9 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { ChatControlService } from './chat-control.service';
 import { ChatService } from '../chat/chat.service';
 
 @Controller('chat-control')
 export class ChatControlController {
   constructor(
-    private readonly chatControlService: ChatControlService,
     private readonly chatService: ChatService,
   ) {}
 
@@ -15,5 +13,12 @@ export class ChatControlController {
     @Query('receiverId') receiverId: string,
   ) {
     return await this.chatService.getMessagesBetween(senderId, receiverId);
+  }
+
+  @Get('chat-list')
+  async showChatList(
+    @Query('userId') userId: string,
+  ) {
+    return await this.chatService.showChatList(userId);
   }
 }
