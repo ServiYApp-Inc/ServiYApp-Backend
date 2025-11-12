@@ -1,20 +1,44 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UploadedFiles, UseInterceptors } from '@nestjs/common';
 import { ReviewsService } from './reviews.service';
 import { CreateReviewDto } from './dto/create-review.dto';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { ApiConsumes } from '@nestjs/swagger';
 
 @Controller('reviews')
 export class ReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}
 
+
   @Post('createReviewProvider')
-  createReviewProvider(@Body() dto: CreateReviewDto) {
-    return this.reviewsService.createReviewProvider(dto);
+  @UseInterceptors(FilesInterceptor('files', 5))
+  @ApiConsumes('multipart/form-data')
+  createReviewProvider(
+    @Body() dto: CreateReviewDto,
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
+    return this.reviewsService.createReviewProvider(dto, files);
   }
 
+  // @Post('createReviewProvider')
+  // createReviewProvider(@Body() dto: CreateReviewDto) {
+  //   return this.reviewsService.createReviewProvider(dto);
+  // }
+
+
   @Post('createReviewClient')
-  createReviewClient(@Body() dto: CreateReviewDto) {
-    return this.reviewsService.createReviewClient(dto);
+  @UseInterceptors(FilesInterceptor('files', 5))
+  @ApiConsumes('multipart/form-data')
+  createReviewClient(
+    @Body() dto: CreateReviewDto,
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
+    return this.reviewsService.createReviewClient(dto, files);
   }
+
+  // @Post('createReviewClient')
+  // createReviewClient(@Body() dto: CreateReviewDto) {
+  //   return this.reviewsService.createReviewClient(dto);
+  // }
 
   // Reseñas hacia un proveedor
   @Get('/provider/:id')

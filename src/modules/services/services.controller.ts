@@ -21,6 +21,8 @@ import { ServiceStatus } from './enums/service-status.enum';
 import { ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { count } from 'console';
 import { Service } from './entities/service.entity';
+import { UseInterceptors, UploadedFiles } from '@nestjs/common';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 
 @Controller('services')
 export class ServicesController {
@@ -142,16 +144,43 @@ export class ServicesController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Post('create')
   @Roles(Role.Provider, Role.Admin)
-  create(@Body() dto: CreateServiceDto, @Req() req) {
-    return this.servicesService.create(dto, req.user);
+  @UseInterceptors(FileFieldsInterceptor([{ name: 'photos', maxCount: 5 }]))
+  async create(
+    @UploadedFiles() files: { photos?: Express.Multer.File[] },
+    @Body() dto: CreateServiceDto,
+    @Req() req,
+  ) {
+    return this.servicesService.create(dto, req.user, files?.photos);
   }
+
+  // @ApiBearerAuth()
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Post('create')
+  // @Roles(Role.Provider, Role.Admin)
+  // create(@Body() dto: CreateServiceDto, @Req() req) {
+  //   return this.servicesService.create(dto, req.user);
+  // }
+
+  // @ApiBearerAuth()
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Patch('update/:id')
+  // @Roles(Role.Provider, Role.Admin)
+  // update(@Param('id') id: string, @Body() dto: UpdateServiceDto, @Req() req) {
+  //   return this.servicesService.update(id, dto, req.user);
+  // }
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Patch('update/:id')
   @Roles(Role.Provider, Role.Admin)
-  update(@Param('id') id: string, @Body() dto: UpdateServiceDto, @Req() req) {
-    return this.servicesService.update(id, dto, req.user);
+  @UseInterceptors(FileFieldsInterceptor([{ name: 'photos', maxCount: 5 }]))
+  async update(
+    @Param('id') id: string,
+    @UploadedFiles() files: { photos?: Express.Multer.File[] },
+    @Body() dto: UpdateServiceDto,
+    @Req() req,
+  ) {
+    return this.servicesService.update(id, dto, req.user, files?.photos);
   }
 
   @ApiBearerAuth()

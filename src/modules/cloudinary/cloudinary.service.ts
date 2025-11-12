@@ -39,4 +39,30 @@ async uploadImage(
       type === 'provider' ? 'serviyapp/providers' : 'serviyapp/users';
     return this.uploadImage(file, folder);
   }
+
+
+
+
+  // Nueva función: subir hasta 5 fotos de un servicio
+  // @param files Lista de archivos
+  async uploadServiceImages(
+    files: Express.Multer.File[],
+  ): Promise<string[]> {
+    if (!files || files.length === 0) {
+      throw new BadRequestException('No se han proporcionado archivos para subir');
+    }
+
+    if (files.length > 5) {
+      throw new BadRequestException('Solo se permiten hasta 5 imágenes por servicio');
+    }
+
+    const uploads = await Promise.all(
+      files.map(async (file) => {
+        const result = await this.uploadImage(file, 'serviyapp/services');
+        return result.secure_url;
+      }),
+    );
+
+    return uploads;
+  }
 }

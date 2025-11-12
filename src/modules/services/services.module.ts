@@ -7,6 +7,7 @@ import { Category } from '../categories/entities/category.entity';
 import { Provider } from '../providers/entities/provider.entity';
 import { ServicesSeed } from './seeds/services.seed';
 import { ProvidersModule } from '../providers/providers.module';
+import { CloudinaryModule } from '../cloudinary/cloudinary.module';
 
 // Módulo encargado de la gestión de servicios.
 // Incluye controladores, servicios, entidades y precarga inicial (seed).
@@ -14,6 +15,7 @@ import { ProvidersModule } from '../providers/providers.module';
   imports: [
     TypeOrmModule.forFeature([Service, Category, Provider]),
     ProvidersModule, // Permite acceder a repositorios y entidades del módulo de proveedores.
+    CloudinaryModule,
   ],
   controllers: [ServicesController],
   providers: [ServicesService, ServicesSeed],

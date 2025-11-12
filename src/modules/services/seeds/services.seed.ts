@@ -70,7 +70,7 @@ export class ServicesSeed implements OnModuleInit {
         const service = this.serviceRepo.create({
           name: s.name,
           description: s.description,
-          photo: s.photo,
+          photos: [s.photo], // ahora es un array, aunque sea una sola imagen
           price: s.price, 
           duration: s.duration,
           status: ServiceStatus.ACTIVE,

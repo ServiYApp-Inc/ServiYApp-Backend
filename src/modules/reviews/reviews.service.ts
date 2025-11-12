@@ -8,6 +8,7 @@ import { Repository } from 'typeorm';
 import { Review } from './entities/review.entity';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { ServiceOrder } from '../../modules/service-orders/entities/service-order.entity';
+import { CloudinaryService } from '../cloudinary/cloudinary.service'; 
 
 @Injectable()
 export class ReviewsService {
@@ -16,77 +17,152 @@ export class ReviewsService {
     private readonly reviewRepo: Repository<Review>,
     @InjectRepository(ServiceOrder)
     private readonly orderRepo: Repository<ServiceOrder>,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
+
+
+
+    // Crear reseña para proveedor
+  async createReviewProvider(dto: CreateReviewDto, files?: Express.Multer.File[]) {
+    const validCombo =
+      (dto.authorUserId && dto.targetProviderId) ||
+      (dto.authorProviderId && dto.targetUserId);
+
+    if (!validCombo) {
+      throw new BadRequestException('Debe especificar un autor y destinatario válidos (user->provider o provider->user)');
+    }
+
+    const order = await this.orderRepo.findOne({ where: { id: dto.orderId } });
+    if (!order) throw new NotFoundException('Orden no encontrada');
+
+    const existing = await this.reviewRepo.find({ where: { orderId: dto.orderId } });
+
+    if (dto.authorUserId && existing.some((r) => !!r.authorUserId)) {
+      throw new BadRequestException('El cliente ya calificó esta orden.');
+    }
+
+    if (dto.authorProviderId && existing.some((r) => !!r.authorProviderId)) {
+      throw new BadRequestException('El proveedor ya calificó esta orden.');
+    }
+
+    const photoUrl = files?.length ? await this.handlePhotoUploads(files) : dto.photoUrl || null;
+
+    const review = this.reviewRepo.create({
+      ...dto,
+      photoUrl: photoUrl ?? undefined,
+    });
+    return await this.reviewRepo.save(review);
+  }
+
+
+
   // Crear reseña para proveedor
-  async createReviewProvider(dto: CreateReviewDto) {
-    // Validar combinación de autor y destinatario
+  // async createReviewProvider(dto: CreateReviewDto) {
+  //   // Validar combinación de autor y destinatario
+  //   const validCombo =
+  //     (dto.authorUserId && dto.targetProviderId) ||
+  //     (dto.authorProviderId && dto.targetUserId);
+
+  //   if (!validCombo) {
+  //     throw new BadRequestException(
+  //       'Debe especificar un autor y destinatario válidos (user->provider o provider->user)',
+  //     );
+  //   }
+
+  //   const order = await this.orderRepo.findOne({ where: { id: dto.orderId } });
+  //   if (!order) throw new NotFoundException('Orden no encontrada');
+
+  //   //Validar si ya existe review
+  //   const existingReviews = await this.reviewRepo.find({
+  //     where: { orderId: dto.orderId },
+  //   });
+
+  //   if (dto.authorUserId && existingReviews.some((r) => !!r.authorUserId)) {
+  //     throw new BadRequestException('El cliente ya calificó esta orden.');
+  //   }
+
+  //   if (
+  //     dto.authorProviderId &&
+  //     existingReviews.some((r) => !!r.authorProviderId)
+  //   ) {
+  //     throw new BadRequestException('El proveedor ya calificó esta orden.');
+  //   }
+
+    
+
+  //   const review = this.reviewRepo.create(dto);
+  //   return await this.reviewRepo.save(review);
+  // }
+
+ // Crear reseña para cliente
+  async createReviewClient(dto: CreateReviewDto, files?: Express.Multer.File[]) {
     const validCombo =
       (dto.authorUserId && dto.targetProviderId) ||
       (dto.authorProviderId && dto.targetUserId);
 
     if (!validCombo) {
-      throw new BadRequestException(
-        'Debe especificar un autor y destinatario válidos (user->provider o provider->user)',
-      );
+      throw new BadRequestException('Debe especificar un autor y destinatario válidos (user->provider o provider->user)');
     }
 
     const order = await this.orderRepo.findOne({ where: { id: dto.orderId } });
     if (!order) throw new NotFoundException('Orden no encontrada');
 
-    //Validar si ya existe review
-    const existingReviews = await this.reviewRepo.find({
-      where: { orderId: dto.orderId },
-    });
+    const existing = await this.reviewRepo.find({ where: { orderId: dto.orderId } });
 
-    if (dto.authorUserId && existingReviews.some((r) => !!r.authorUserId)) {
+    if (dto.authorUserId && existing.some((r) => !!r.authorUserId)) {
       throw new BadRequestException('El cliente ya calificó esta orden.');
     }
 
-    if (
-      dto.authorProviderId &&
-      existingReviews.some((r) => !!r.authorProviderId)
-    ) {
+    if (dto.authorProviderId && existing.some((r) => !!r.authorProviderId)) {
       throw new BadRequestException('El proveedor ya calificó esta orden.');
     }
 
-    const review = this.reviewRepo.create(dto);
+    const photoUrl = files?.length ? await this.handlePhotoUploads(files) : dto.photoUrl || null;
+
+    const review = this.reviewRepo.create({
+      ...dto,
+      photoUrl: photoUrl ?? undefined,
+    });
     return await this.reviewRepo.save(review);
   }
+
   // Crear reseña para cliente
-  async createReviewClient(dto: CreateReviewDto) {
-    // Validar combinación de autor y destinatario
-    const validCombo =
-      (dto.authorUserId && dto.targetProviderId) ||
-      (dto.authorProviderId && dto.targetUserId);
+  // async createReviewClient(dto: CreateReviewDto) {
+  //   // Validar combinación de autor y destinatario
+  //   const validCombo =
+  //     (dto.authorUserId && dto.targetProviderId) ||
+  //     (dto.authorProviderId && dto.targetUserId);
 
-    if (!validCombo) {
-      throw new BadRequestException(
-        'Debe especificar un autor y destinatario válidos (user->provider o provider->user)',
-      );
-    }
+  //   if (!validCombo) {
+  //     throw new BadRequestException(
+  //       'Debe especificar un autor y destinatario válidos (user->provider o provider->user)',
+  //     );
+  //   }
 
-    const order = await this.orderRepo.findOne({ where: { id: dto.orderId } });
-    if (!order) throw new NotFoundException('Orden no encontrada');
+  //   const order = await this.orderRepo.findOne({ where: { id: dto.orderId } });
+  //   if (!order) throw new NotFoundException('Orden no encontrada');
 
-    //Validar si ya existe review
-    const existingReviews = await this.reviewRepo.find({
-      where: { orderId: dto.orderId },
-    });
+  //   //Validar si ya existe review
+  //   const existingReviews = await this.reviewRepo.find({
+  //     where: { orderId: dto.orderId },
+  //   });
 
-    if (dto.authorUserId && existingReviews.some((r) => !!r.authorUserId)) {
-      throw new BadRequestException('El cliente ya calificó esta orden.');
-    }
+  //   if (dto.authorUserId && existingReviews.some((r) => !!r.authorUserId)) {
+  //     throw new BadRequestException('El cliente ya calificó esta orden.');
+  //   }
 
-    if (
-      dto.authorProviderId &&
-      existingReviews.some((r) => !!r.authorProviderId)
-    ) {
-      throw new BadRequestException('El proveedor ya calificó esta orden.');
-    }
+  //   if (
+  //     dto.authorProviderId &&
+  //     existingReviews.some((r) => !!r.authorProviderId)
+  //   ) {
+  //     throw new BadRequestException('El proveedor ya calificó esta orden.');
+  //   }
 
-    const review = this.reviewRepo.create(dto);
-    return await this.reviewRepo.save(review);
-  }
+  //   const review = this.reviewRepo.create(dto);
+  //   return await this.reviewRepo.save(review);
+  // }
+
+
   // Obtener reseñas para un proveedor
   async findByProvider(providerId: string) {
     return await this.reviewRepo.find({
@@ -130,4 +206,21 @@ export class ReviewsService {
 
     return { clientReviewed, providerReviewed };
   }
+
+
+  // Subir múltiples fotos
+  private async handlePhotoUploads(files?: Express.Multer.File[]): Promise<string[] | null> {
+    if (!files || files.length === 0) return null;
+
+    const uploads = await Promise.all(
+      files.map((file) => this.cloudinaryService.uploadImage(file, 'serviyapp/reviews')),
+    );
+
+    return uploads.map((r) => r.secure_url);
+  }
+
+
+
+
+
 }
