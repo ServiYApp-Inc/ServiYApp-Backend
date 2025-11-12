@@ -7,10 +7,18 @@ import { Address } from '../addresses/entities/address.entity';
 import { Provider } from '../providers/entities/provider.entity';
 import { Service } from '../services/entities/service.entity';
 import { User } from '../users/entities/user.entity';
+import { Review } from '../reviews/entities/review.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ServiceOrder, Provider, User, Service, Address]),
+    TypeOrmModule.forFeature([
+      ServiceOrder,
+      Provider,
+      User,
+      Service,
+      Address,
+      Review,
+    ]),
   ],
   controllers: [ServiceOrdersController],
   providers: [ServiceOrdersService],

@@ -45,12 +45,9 @@ export class Review {
   @JoinColumn({ name: 'targetProviderId' })
   targetProvider?: Provider;
 
-  // --- Orden ---
-  @ManyToOne(() => ServiceOrder, (order) => order.reviews, {
-    onDelete: 'CASCADE',
-  })
+  @ManyToOne(() => ServiceOrder, (serviceOrders) => serviceOrders.reviews)
   @JoinColumn({ name: 'orderId' })
-  order: ServiceOrder;
+  serviceOrders: ServiceOrder;
 
   @Column()
   orderId: string;

@@ -45,8 +45,6 @@ export class ServiceOrder {
   @OneToMany(() => Payment, (payment) => payment.serviceOrder)
   payments: Payment[];
 
-  @OneToMany(() => Review, (review) => review.order, {
-    cascade: true,
-  })
+  @OneToMany(() => Review, (review) => review.serviceOrders)
   reviews: Review[];
 }
