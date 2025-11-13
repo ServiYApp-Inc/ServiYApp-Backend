@@ -18,7 +18,7 @@ import { PaymentsModule } from './modules/payments/payments.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { AddressesModule } from './modules/addresses/addresses.module';
-// import { ChatControlModule } from './modules/chat-control/chat-control.module';
+import { ChatControlModule } from './modules/chat-control/chat-control.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 
 @Module({
@@ -52,7 +52,7 @@ import { ReviewsModule } from './modules/reviews/reviews.module';
     NotificationsModule,
     ChatModule,
     AddressesModule,
-    // ChatControlModule,
+    ChatControlModule,
     ReviewsModule,
   ],
   controllers: [AppController],
