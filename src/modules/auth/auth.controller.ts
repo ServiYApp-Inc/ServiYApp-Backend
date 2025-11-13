@@ -14,7 +14,13 @@ import { CreateUserDto } from '../users/dto/create-user.dto';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-
+  // Completar registro del proveedor (Google)
+  @Patch('complete-register-provider')
+  @UseGuards(JwtAuthGuard)
+  async completeRegisterProvider(@Req() req, @Body() body: any) {
+    const providerId = req.user.id;
+    return this.authService.completeRegisterProvider(providerId, body);
+  }
 
   // Recuperar contraseña (usuarios)
   @Post('users/forgot-password')
