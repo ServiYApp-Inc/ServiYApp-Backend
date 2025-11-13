@@ -29,6 +29,16 @@ export class ServicesController {
   constructor(private readonly servicesService: ServicesService) {}
 
 
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.Admin)
+  @Get('admin/all')
+  async findAllAdmin() {
+    return this.servicesService.findAllAdmin();
+  }
+
+
+
 
   // PÚBLICOS
   @Get('find-all')

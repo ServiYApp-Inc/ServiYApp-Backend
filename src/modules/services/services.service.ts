@@ -24,6 +24,15 @@ export class ServicesService {
   ) {}
 
 
+  // Ver TODOS los servicios (solo Admin)
+  async findAllAdmin(): Promise<Service[]> {
+    return await this.serviceRepository.find({
+      relations: ['provider', 'category'],
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+
   // Ver todos los servicios de un proveedor específico
   async findByProvider(providerId: string, user: any): Promise<Service[]> {
     // Si el usuario es proveedor, solo puede ver los suyos
