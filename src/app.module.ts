@@ -18,7 +18,7 @@ import { PaymentsModule } from './modules/payments/payments.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { AddressesModule } from './modules/addresses/addresses.module';
-// import { ChatControlModule } from './modules/chat-control/chat-control.module';
+import { ChatControlModule } from './modules/chat-control/chat-control.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { ProviderDocumentsModule } from './modules/providers/provider-documents.module';
 
@@ -53,7 +53,7 @@ import { ProviderDocumentsModule } from './modules/providers/provider-documents.
     NotificationsModule,
     ChatModule,
     AddressesModule,
-    // ChatControlModule,
+    ChatControlModule,
     ReviewsModule,
     ProviderDocumentsModule,
   ],
