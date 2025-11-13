@@ -1,10 +1,16 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ProviderDocument } from './entities/provider-document.entity';
 import { Provider } from './entities/provider.entity';
 import { v2 as cloudinary } from 'cloudinary';
 import { DocumentStatus } from './enums/document-status.enum';
+import { Role } from '../auth/roles.enum';
 
 @Injectable()
 export class ProviderDocumentsService {
@@ -16,23 +22,54 @@ export class ProviderDocumentsService {
     private readonly providerRepo: Repository<Provider>,
   ) {}
 
-  async uploadToCloudinary(file: Express.Multer.File, folder: string) {
-    try {
-      const result = await cloudinary.uploader.upload(file.path, {
-        folder,
-        resource_type: 'auto', // detecta pdf, img, etc.
-      });
-      return result.secure_url;
-    } catch (err) {
-      throw new BadRequestException('Error al subir el archivo a Cloudinary');
+  /**
+   * Sube un archivo a Cloudinary usando buffer (memoria)
+   * Soporta PDFs, imágenes, etc. gracias a resource_type: 'auto'
+   */
+  private async uploadToCloudinary(
+    file: Express.Multer.File,
+    folder: string,
+  ): Promise<string> {
+    if (!file) {
+      throw new BadRequestException('No se ha proporcionado ningún archivo');
     }
+
+    return new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder,
+          resource_type: 'auto', // 🔹 acepta pdf, imágenes, etc.
+        },
+        (error, result) => {
+          if (error || !result) {
+            console.error('Cloudinary upload error:', error);
+            return reject(
+              new BadRequestException('Error al subir el archivo a Cloudinary'),
+            );
+          }
+          resolve(result.secure_url);
+        },
+      );
+
+      uploadStream.end(file.buffer);
+    });
   }
 
   async create(
     providerId: string,
-    files: { file?: Express.Multer.File[]; photoVerification?: Express.Multer.File[]; accountFile?: Express.Multer.File[] },
+    files: {
+      file?: Express.Multer.File[];
+      photoVerification?: Express.Multer.File[];
+      accountFile?: Express.Multer.File[];
+    },
     dto: any,
+    user: any,
   ) {
+    // Seguridad: proveedor solo sube sus propios docs
+    if (user.role === Role.Provider && user.id !== providerId) {
+      throw new ForbiddenException('No puedes subir documentos de otro proveedor.');
+    }
+
     const provider = await this.providerRepo.findOne({ where: { id: providerId } });
     if (!provider) throw new NotFoundException('Proveedor no encontrado');
 
@@ -46,23 +83,40 @@ export class ProviderDocumentsService {
     document.bank = dto.bank || null;
     document.status = DocumentStatus.PENDING;
 
-    // Subida de archivos (si los hay)
+    // Archivo principal (PDF)
     if (files.file?.[0]) {
       const pdf = files.file[0];
-      if (!pdf.mimetype.includes('pdf')) throw new BadRequestException('El archivo principal debe ser un PDF');
-      document.file = await this.uploadToCloudinary(pdf, 'providers/documents');
+      if (!pdf.mimetype.includes('pdf')) {
+        throw new BadRequestException('El archivo principal debe ser un PDF');
+      }
+      document.file = await this.uploadToCloudinary(
+        pdf,
+        'serviyapp/providers/documents',
+      );
     }
 
+    // Foto de verificación (imagen)
     if (files.photoVerification?.[0]) {
       const photo = files.photoVerification[0];
-      if (!photo.mimetype.startsWith('image/')) throw new BadRequestException('La foto de verificación debe ser una imagen');
-      document.photoVerification = await this.uploadToCloudinary(photo, 'providers/verifications');
+      if (!photo.mimetype.startsWith('image/')) {
+        throw new BadRequestException('La foto de verificación debe ser una imagen');
+      }
+      document.photoVerification = await this.uploadToCloudinary(
+        photo,
+        'serviyapp/providers/verifications',
+      );
     }
 
+    // Soporte bancario (PDF)
     if (files.accountFile?.[0]) {
       const acc = files.accountFile[0];
-      if (!acc.mimetype.includes('pdf')) throw new BadRequestException('El soporte bancario debe ser un PDF');
-      document.accountFile = await this.uploadToCloudinary(acc, 'providers/accounts');
+      if (!acc.mimetype.includes('pdf')) {
+        throw new BadRequestException('El soporte bancario debe ser un PDF');
+      }
+      document.accountFile = await this.uploadToCloudinary(
+        acc,
+        'serviyapp/providers/accounts',
+      );
     }
 
     return await this.providerDocumentRepo.save(document);

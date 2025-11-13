@@ -26,7 +26,7 @@ export class ProviderDocument {
   @Column({ type: 'varchar', length: 50 })
   documentNumber: string;
 
-  @Column({ type: 'varchar', nullable: true })
+  @Column({ type: 'varchar', nullable: true, length: 300 })
   file: string; // URL del documento
 
   @CreateDateColumn({ type: 'timestamp' })
@@ -38,11 +38,11 @@ export class ProviderDocument {
   @Column({ type: 'text', nullable: true })
   description: string;
 
-  @Column({ type: 'varchar', length: 30, nullable: true })
+  @Column({ type: 'varchar', length: 300, nullable: true })
   photoVerification: string;
 
   // Datos bancarios opcionales
-  @Column({ type: 'varchar', length: 30, nullable: true })
+  @Column({ type: 'varchar', length: 300, nullable: true })
   accountType: string;
 
   @Column({ type: 'varchar', length: 50, nullable: true })

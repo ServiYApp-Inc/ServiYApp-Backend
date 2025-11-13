@@ -7,17 +7,25 @@ import {
   Param,
   Get,
   Patch,
+  UseGuards,
+  Req,
 } from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { ProviderDocumentsService } from './provider-documents.service';
 import { DocumentStatus } from './enums/document-status.enum';
-import { ApiConsumes, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiConsumes, ApiTags } from '@nestjs/swagger';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Role } from '../auth/roles.enum';
 
 @ApiTags('provider-documents')
 @Controller('provider-documents')
 export class ProviderDocumentsController {
   constructor(private readonly providerDocumentsService: ProviderDocumentsService) {}
 
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @Post(':providerId')
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(
@@ -28,16 +36,12 @@ export class ProviderDocumentsController {
     ]),
   )
   async uploadDocuments(
+    @Req() req,
     @Param('providerId') providerId: string,
-    @UploadedFiles()
-    files: {
-      file?: Express.Multer.File[];
-      photoVerification?: Express.Multer.File[];
-      accountFile?: Express.Multer.File[];
-    },
+    @UploadedFiles() files,
     @Body() dto: any,
   ) {
-    return this.providerDocumentsService.create(providerId, files, dto);
+    return this.providerDocumentsService.create(providerId, files, dto, req.user);
   }
 
   @Get(':providerId')
@@ -45,8 +49,14 @@ export class ProviderDocumentsController {
     return this.providerDocumentsService.findAll(providerId);
   }
 
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.Admin)
   @Patch('status/:id')
-  async updateStatus(@Param('id') id: string, @Body('status') status: DocumentStatus) {
+  async updateStatus(
+    @Param('id') id: string,
+    @Body('status') status: DocumentStatus
+  ) {
     return this.providerDocumentsService.updateStatus(id, status);
   }
 }

@@ -20,6 +20,7 @@ import { ChatModule } from './modules/chat/chat.module';
 import { AddressesModule } from './modules/addresses/addresses.module';
 // import { ChatControlModule } from './modules/chat-control/chat-control.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
+import { ProviderDocumentsModule } from './modules/providers/provider-documents.module';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { ReviewsModule } from './modules/reviews/reviews.module';
     AddressesModule,
     // ChatControlModule,
     ReviewsModule,
+    ProviderDocumentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
