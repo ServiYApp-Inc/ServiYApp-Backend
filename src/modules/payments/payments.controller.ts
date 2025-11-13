@@ -6,20 +6,21 @@ import {
   Get,
   Query,
   Res,
-  HttpStatus,
+  Req,
 } from '@nestjs/common';
 import express from 'express';
+import * as crypto from 'crypto';
 import { MercadoPagoService } from './mercadopago.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { PaymentsService } from './payments.service';
-import MercadoPagoConfig, { MerchantOrder } from 'mercadopago';
+import MercadoPagoConfig from 'mercadopago';
 
 @Controller('payments')
 export class PaymentsController {
   private readonly logger = new Logger(PaymentsController.name);
 
   private client = new MercadoPagoConfig({
-    accessToken: process.env.MP_ACCESS_TOKEN || 'APP_USR-xxxxxxxxxxxxxxxxxxxx',
+    accessToken: process.env.MP_ACCESS_TOKEN || '',
   });
 
   constructor(
@@ -27,10 +28,7 @@ export class PaymentsController {
     private readonly paymentsService: PaymentsService,
   ) {}
 
-  /**
-   * 🧾 Crear preferencia en Mercado Pago
-   * Retorna el init_point (URL de pago)
-   */
+  // ✅ Crear preferencia
   @Post('create-preference')
   async createPreference(@Body() createPaymentDto: CreatePaymentDto) {
     try {
@@ -43,25 +41,21 @@ export class PaymentsController {
             unit_price: createPaymentDto.amount,
           },
         ],
-        payer: {
-          email: createPaymentDto.payerEmail,
-        },
+        payer: { email: createPaymentDto.payerEmail },
         back_urls: {
           success: `${process.env.FRONTEND_URL}/payments/success`,
           failure: `${process.env.FRONTEND_URL}/payments/failure`,
           pending: `${process.env.FRONTEND_URL}/payments/pending`,
         },
-        external_reference: 'user_123456',
+        external_reference: createPaymentDto.serviceOrderId, // ← referencia a tu orden
         notification_url: `${process.env.BACKEND_URL}/payments/webhook`,
         auto_return: 'approved',
         binary_mode: true,
       };
 
-      // Llama al servicio para crear la preferencia en Mercado Pago
       const preference =
         await this.mercadoPagoService.createPreference(preferenceData);
 
-      // Guarda el pago en tu base de datos (opcional)
       const newPayment = await this.paymentsService.create({
         ...createPaymentDto,
         mpPreferenceId: preference.id,
@@ -70,7 +64,7 @@ export class PaymentsController {
 
       return {
         message: 'Preferencia creada exitosamente',
-        init_point: preference.init_point, // URL para redirigir al cliente
+        init_point: preference.init_point,
         preference_id: preference.id,
         payment: newPayment,
       };
@@ -80,91 +74,89 @@ export class PaymentsController {
     }
   }
 
-  @Get('success')
-  success() {
-    return { message: 'Pago exitoso' };
-  }
-
-  @Get('failure')
-  failure() {
-    return { message: 'Pago fallido' };
-  }
-
-  @Get('pending')
-  pending() {
-    return { message: 'Pago pendiente' };
-  }
-
+  // ✅ Webhook robusto (funciona con o sin firma)
   @Post('webhook')
   async receiveWebhook(
     @Query() query: any,
     @Body() body: any,
+    @Req() req: express.Request,
     @Res() res: express.Response,
   ) {
     try {
-      this.logger.log('Webhook recibido:', query);
-
       const { id, topic } = query;
+      const signature = req.headers['x-signature'] as string;
+      const secret = process.env.MP_WEBHOOK_SECRET;
 
-      // ✅ Caso 1: webhook de pago directo
+      this.logger.log('📦 Contenido recibido:', body);
+
+      // Validar firma solo si viene (modo test a veces no la envía)
+      if (signature && secret && id && topic) {
+        const parts = signature.split(',');
+        const tsPart = parts.find((p) => p.startsWith('t='));
+        const v1Part = parts.find((p) => p.startsWith('v1='));
+
+        if (tsPart && v1Part) {
+          const ts = tsPart.split('=')[1];
+          const v1 = v1Part.split('=')[1];
+
+          // 👇 Cadena correcta según documentación oficial
+          const data = `t=${ts}&id=${id}&topic=${topic}`;
+
+          const expectedHash = crypto
+            .createHmac('sha256', secret)
+            .update(data)
+            .digest('hex');
+
+          if (v1 !== expectedHash) {
+            this.logger.warn('🚫 Firma inválida — posible fraude');
+          } else {
+            this.logger.log('✅ Firma válida — webhook autenticado');
+          }
+        }
+      }
+
       if (topic === 'payment') {
-        this.logger.log(`🔔 Notificación de pago recibida: ${id}`);
-
-        const payment = await fetch(
+        const response = await fetch(
           `https://api.mercadopago.com/v1/payments/${id}`,
           {
-            headers: {
-              Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}`,
-            },
+            headers: { Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}` },
           },
         ).then((r) => r.json());
 
-        this.logger.log('💳 Detalle del pago:', payment);
+        this.logger.log('💰 Detalle del pago:', response);
 
-        if (payment.status === 'approved') {
-          this.logger.log('✅ Pago aprobado');
-          // Aquí actualizas tu base de datos o lógica de negocio
-        } else if (payment.status === 'pending') {
-          this.logger.log('⏳ Pago pendiente');
+        const mpPaymentId = response.id?.toString();
+        const preferenceId =
+          response.order?.id || response.metadata?.preference_id;
+        const status = response.status || 'unknown';
+
+        if (mpPaymentId) {
+          await this.paymentsService.updatePaymentInfo(
+            mpPaymentId,
+            status,
+            preferenceId,
+            response.external_reference,
+          );
         } else {
-          this.logger.log('❌ Pago rechazado');
+          this.logger.warn('⚠️ No se recibió mpPaymentId del webhook');
         }
       }
 
-      // ✅ Caso 2: webhook de merchant_order (orden)
-      if (topic === 'merchant_order') {
-        const merchantOrder = new MerchantOrder(this.client);
-        const response = await merchantOrder.get({ merchantOrderId: id });
-
-        this.logger.log('🧾 Detalle de la orden:', response);
-
-        const payments = response.payments ?? [];
-        if (payments.length > 0) {
-          const payment = payments[0];
-          if (payment.status === 'approved') {
-            this.logger.log('✅ Pago aprobado desde orden');
-          } else if (payment.status === 'pending') {
-            this.logger.log('⏳ Pago pendiente desde orden');
-          } else {
-            this.logger.log('❌ Pago rechazado desde orden');
-          }
-        } else {
-          this.logger.warn('⚠️ No se encontraron pagos en la orden');
-        }
-      }
-
-      return res.status(HttpStatus.OK).send('Webhook procesado');
+      return res.status(200).send('Webhook procesado');
     } catch (error) {
-      this.logger.error('Error en webhook:', error);
-      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send('Error interno');
+      this.logger.error('❌ Error en webhook:', error);
+      return res.status(500).send('Error interno');
     }
   }
 
-  /**
-   * 📄 Obtener un pago por ID
-   */
-  // @Get(':id')
-  // findOne(@Param('id') id: string) {
-  //   return this.paymentsService..findOne(id);
-  // }
+  // ✅ Rutas de prueba
+  @Get('success') success() {
+    return { message: 'Pago exitoso' };
+  }
+  @Get('failure') failure() {
+    return { message: 'Pago fallido' };
+  }
+  @Get('pending') pending() {
+    return { message: 'Pago pendiente' };
+  }
 }

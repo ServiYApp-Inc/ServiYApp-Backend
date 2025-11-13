@@ -27,7 +27,7 @@ export class ChatGateway {
 
     const message = await this.chatService.saveMessage(data);
 
-    client.broadcast.emit(`chat_${data.receiverId}`, message);
+    client.broadcast.emit(`message`, message);
 
     return message;
   }

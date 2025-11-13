@@ -26,8 +26,8 @@ export class Service {
   @Column({ type: 'text' })
   description: string;
 
-  @Column({ nullable: true })
-  photo: string;
+  @Column({ type: 'simple-array', nullable: true })
+  photos: string[];
 
   @Column({ type: 'enum', enum: ServiceStatus, default: ServiceStatus.ACTIVE })
   status: ServiceStatus;
