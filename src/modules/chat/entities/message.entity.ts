@@ -1,9 +1,12 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
-@Entity()
+@Entity({ name: 'message' })
 export class MessageEntity {
-  @PrimaryGeneratedColumn("uuid")
+  @PrimaryGeneratedColumn('uuid') 
   id: string;
+
+  @Column({ length: 500 })
+  content: string;
 
   @Column()
   senderId: string;
@@ -11,9 +14,12 @@ export class MessageEntity {
   @Column()
   receiverId: string;
 
-  @Column()
-  content: string;
-
-  @CreateDateColumn()
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   time: Date;
+
+  @Column({ default: false })
+  delivered: boolean;
+
+  @Column({ default: false })
+  read: boolean;
 }
