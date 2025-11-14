@@ -19,11 +19,39 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Role } from '../auth/roles.enum';
 
+
+
+
 @ApiTags('provider-documents')
 @Controller('provider-documents')
 export class ProviderDocumentsController {
   constructor(private readonly providerDocumentsService: ProviderDocumentsService) {}
 
+
+
+    // LISTAR DOCUMENTOS PENDIENTES
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.Admin)
+  @Get('admin/pending')
+  async getPendingDocuments() {
+    return this.providerDocumentsService.getPendingDocuments();
+  }
+
+
+  // REVISAR DOCUMENTO (APROBAR / RECHAZAR)
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.Admin)
+  @Patch('admin/review/:id')
+  async reviewDocument(
+    @Param('id') id: string,
+    @Body() body: { status: DocumentStatus; comment?: string },
+  ) {
+    return this.providerDocumentsService.reviewDocument(id, body.status, body.comment);
+  }
+
+  
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Post(':providerId')
@@ -43,6 +71,11 @@ export class ProviderDocumentsController {
   ) {
     return this.providerDocumentsService.create(providerId, files, dto, req.user);
   }
+
+
+
+
+
 
   @Get(':providerId')
   async findAll(@Param('providerId') providerId: string) {

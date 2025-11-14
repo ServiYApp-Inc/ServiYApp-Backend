@@ -44,6 +44,14 @@ export class Address {
   @Column({ default: true })
   status: boolean;
 
+  // Coordenadas (opcional)
+  @Column({ type: 'decimal', precision: 10, scale: 7, nullable: true })
+  lat: number;
+
+  @Column({ type: 'decimal', precision: 10, scale: 7, nullable: true })
+  lng: number;
+
+
   // Relación con el país correspondiente.
   @ManyToOne(() => Country, { eager: true })
   @JoinColumn({ name: 'country_id' })
