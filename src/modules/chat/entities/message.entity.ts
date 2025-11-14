@@ -1,19 +1,19 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from "typeorm";
 
-@Entity({ name: 'messsage' })
+@Entity()
 export class MessageEntity {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @Column({ length: 300 })
+  @Column()
+  senderId: string;
+
+  @Column()
+  receiverId: string;
+
+  @Column()
   content: string;
 
-  @Column({ type: 'timestamp' })
+  @CreateDateColumn()
   time: Date;
-
-  @Column()
-  senderId: string; // Puede ser User o Provider
-
-  @Column()
-  receiverId: string; // Puede ser User o Provider
 }

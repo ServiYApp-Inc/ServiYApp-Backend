@@ -1,33 +1,46 @@
-import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WsException } from '@nestjs/websockets';
+import {
+  WebSocketGateway,
+  WebSocketServer,
+  SubscribeMessage,
+  MessageBody,
+  ConnectedSocket,
+  OnGatewayConnection,
+  OnGatewayDisconnect,
+} from '@nestjs/websockets';
+import { Logger } from '@nestjs/common';
+import { Socket, Server } from 'socket.io';
 import { ChatService } from './chat.service';
-import { Socket } from 'socket.io';
-import { MessageEntity } from './entities/message.entity';
-import { ServiceOrdersService } from '../service-orders/service-orders.service';
-import { UseFilters } from '@nestjs/common';
-import { WebsocketExceptionsFilter } from './filters/websocketExceptions.filter';
 
-@UseFilters(new WebsocketExceptionsFilter())
-@WebSocketGateway({ transport: ['websocket'], cors: true })
-export class ChatGateway {
-  constructor(
-    private readonly chatService: ChatService,
-    private readonly serviceOrdersService: ServiceOrdersService,
-  ) {}
+@WebSocketGateway({ cors: true, transports: ['websocket'] })
+export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
+  @WebSocketServer()
+  server: Server;
+
+  private readonly logger = new Logger(ChatGateway.name);
+
+  constructor(private readonly chatService: ChatService) {}
+
+  handleConnection(client: Socket) {
+    const userId = client.handshake.query.userId;
+    if (!userId) return client.disconnect();
+    client.join(userId as string);
+    this.logger.log(`🟢 Usuario conectado: ${userId}`);
+  }
+
+  handleDisconnect(client: Socket) {
+    this.logger.log(`🔴 Usuario desconectado: ${client.id}`);
+  }
 
   @SubscribeMessage('sendMessage')
   async handleMessage(
-    @MessageBody() data: { senderId: string, receiverId: string, content: string, serviceOrderId: string },
+    @MessageBody()
+    data: { senderId: string; receiverId: string; content: string },
     @ConnectedSocket() client: Socket,
-  ): Promise<MessageEntity> {
-    const isValidOrder = await this.serviceOrdersService.findOne(data.serviceOrderId);
-    
-    if (!isValidOrder) {
-      throw new WsException('La orden de servicio no existe o no es valida')
-    }
-
+  ) {
     const message = await this.chatService.saveMessage(data);
 
-    client.broadcast.emit(`message`, message);
+    this.server.to(data.senderId).emit('message', message);
+    this.server.to(data.receiverId).emit('message', message);
 
     return message;
   }
