@@ -135,4 +135,48 @@ export class ProviderDocumentsService {
     doc.status = status;
     return this.providerDocumentRepo.save(doc);
   }
+
+  async getPendingDocuments() {
+    return this.providerDocumentRepo.find({
+      where: { status: DocumentStatus.PENDING },
+      relations: ['provider', 'provider.country', 'provider.region', 'provider.city'],
+      order: { date: 'DESC' },
+    });
+  }
+
+  async reviewDocument(
+    documentId: string,
+    status: DocumentStatus,
+    comment?: string,
+  ) {
+    const document = await this.providerDocumentRepo.findOne({
+      where: { id: documentId },
+      relations: ['provider'],
+    });
+
+    if (!document) {
+      throw new NotFoundException('Documento no encontrado');
+    }
+
+    // Asignar nuevo estado
+    document.status = status;
+
+    // Si hay comentario (solo para rechazo)
+    if (comment) {
+      document.adminComment = comment;
+    }
+
+    await this.providerDocumentRepo.save(document);
+
+    // Si fue aprobado → marcar proveedor como completado
+    if (status === DocumentStatus.APPROVED) {
+      document.provider.isCompleted = true;
+      await this.providerRepo.save(document.provider);
+    }
+
+    return {
+      message: `Documento ${status}`,
+      document,
+    };
+  }
 }

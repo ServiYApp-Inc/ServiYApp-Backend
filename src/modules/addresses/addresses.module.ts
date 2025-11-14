@@ -7,6 +7,7 @@ import { Country } from 'src/modules/locations/entities/country.entity';
 import { Region } from 'src/modules/locations/entities/region.entity';
 import { City } from 'src/modules/locations/entities/city.entity';
 import { User } from 'src/modules/users/entities/user.entity';
+import { CommonModule } from '../common/common.module';
 
 // Módulo de direcciones (Addresses).
 // Gestiona toda la lógica relacionada con las direcciones de los usuarios,
@@ -14,7 +15,10 @@ import { User } from 'src/modules/users/entities/user.entity';
 @Module({
   // Importa las entidades necesarias para que estén disponibles
   // dentro del contexto de este módulo (TypeORM).
-  imports: [TypeOrmModule.forFeature([Address, Country, Region, City, User])],
+  imports: [TypeOrmModule.forFeature([Address, Country, Region, City, User]),
+  CommonModule,
+  ],
+
 
   // Controlador responsable de manejar las rutas HTTP relacionadas con direcciones.
   controllers: [AddressesController],

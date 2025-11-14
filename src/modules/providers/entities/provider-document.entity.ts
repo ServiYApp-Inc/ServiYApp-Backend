@@ -53,4 +53,7 @@ export class ProviderDocument {
 
   @Column({ type: 'varchar', nullable: true })
   accountFile: string; // URL del soporte bancario
+
+  @Column({ type: 'text', nullable: true })
+  adminComment: string;
 }
