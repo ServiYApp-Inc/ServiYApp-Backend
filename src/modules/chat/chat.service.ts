@@ -10,15 +10,22 @@ export class ChatService {
     private readonly messageRepo: Repository<MessageEntity>,
   ) {}
 
+  // 🟣 GUARDAR MENSAJE
   async saveMessage(data: {
     senderId: string;
     receiverId: string;
     content: string;
   }) {
-    const message = this.messageRepo.create(data);
-    return this.messageRepo.save(message);
+    const msg = this.messageRepo.create({
+      ...data,
+      delivered: false,
+      read: false,
+    });
+
+    return await this.messageRepo.save(msg);
   }
 
+  // 🟣 HISTORIAL COMPLETO ENTRE DOS USUARIOS
   async getMessagesBetween(userA: string, userB: string) {
     return await this.messageRepo.find({
       where: [
@@ -29,30 +36,46 @@ export class ChatService {
     });
   }
 
+  // 🟣 LISTA DE CONVERSACIONES (INBOX)
   async getConversations(userId: string) {
-    // 1. Obtener mensajes donde el usuario participa
     const messages = await this.messageRepo.find({
       where: [{ senderId: userId }, { receiverId: userId }],
       order: { time: 'DESC' },
     });
 
-    // 2. Agrupar por la otra persona
-    const conversations: Record<string, any> = {};
+    const conv: Record<string, any> = {};
 
     for (const msg of messages) {
       const other = msg.senderId === userId ? msg.receiverId : msg.senderId;
 
-      // si ya existe, solo saltar (ya tenemos el más reciente)
-      if (!conversations[other]) {
-        conversations[other] = {
+      if (!conv[other]) {
+        conv[other] = {
           userId: other,
           lastMessage: msg.content,
           time: msg.time,
+          read: msg.read,
         };
       }
     }
 
-    // retorna como lista ordenada
-    return Object.values(conversations);
+    return Object.values(conv);
+  }
+
+  // 🟩 ENTREGADO
+  async markAsDelivered(messageId: string) {
+    await this.messageRepo.update(messageId, { delivered: true });
+  }
+
+  // 🟩 LEÍDO UNO
+  async markAsRead(messageId: string) {
+    await this.messageRepo.update(messageId, { read: true, delivered: true });
+  }
+
+  // 🟩 LEER TODOS
+  async markAllAsRead(senderId: string, receiverId: string) {
+    await this.messageRepo.update(
+      { senderId, receiverId, read: false },
+      { read: true, delivered: true },
+    );
   }
 }

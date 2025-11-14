@@ -11,37 +11,124 @@ import { Logger } from '@nestjs/common';
 import { Socket, Server } from 'socket.io';
 import { ChatService } from './chat.service';
 
-@WebSocketGateway({ cors: true, transports: ['websocket'] })
+@WebSocketGateway({
+  cors: true,
+  transports: ['websocket'],
+})
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
-  private readonly logger = new Logger(ChatGateway.name);
+  private logger = new Logger(ChatGateway.name);
 
   constructor(private readonly chatService: ChatService) {}
 
+  // ----------------------------------------
+  // 🟢 USUARIO CONECTADO
+  // ----------------------------------------
   handleConnection(client: Socket) {
-    const userId = client.handshake.query.userId;
+    const userId = client.handshake.query.userId as string;
+
     if (!userId) return client.disconnect();
-    client.join(userId as string);
+
+    client.join(userId);
     this.logger.log(`🟢 Usuario conectado: ${userId}`);
+
+    // Avisar a todos
+    // Notificar solo al usuario con el que tiene chat abierto
+    client.rooms.forEach((room) => {
+      if (room !== client.id) {
+        this.server.to(room).emit('userOnline', { userId });
+      }
+    });
   }
 
+  // ----------------------------------------
+  // 🔴 USUARIO DESCONECTADO
+  // ----------------------------------------
   handleDisconnect(client: Socket) {
+    const rooms = Array.from(client.rooms);
+    const userId = rooms[1]; // room 1 es el userId
+
+    if (userId) {
+      this.server.emit('userOffline', { userId });
+    }
+
     this.logger.log(`🔴 Usuario desconectado: ${client.id}`);
   }
 
-  @SubscribeMessage('sendMessage')
-  async handleMessage(
-    @MessageBody()
-    data: { senderId: string; receiverId: string; content: string },
+  // ----------------------------------------
+  // 📜 OBTENER HISTORIAL
+  // ----------------------------------------
+  @SubscribeMessage('getHistory')
+  async getHistory(
+    @MessageBody() data: { userId: string; receiverId: string },
     @ConnectedSocket() client: Socket,
   ) {
-    const message = await this.chatService.saveMessage(data);
+    const history = await this.chatService.getMessagesBetween(
+      data.userId,
+      data.receiverId,
+    );
 
-    this.server.to(data.senderId).emit('message', message);
-    this.server.to(data.receiverId).emit('message', message);
+    client.emit('messagesHistory', history);
+  }
 
-    return message;
+  // ----------------------------------------
+  // ✉️ ENVIAR MENSAJE
+  // ----------------------------------------
+  @SubscribeMessage('sendMessage')
+  async sendMessage(
+    @MessageBody()
+    data: {
+      senderId: string;
+      receiverId: string;
+      content: string;
+    },
+  ) {
+    // Guardar mensaje
+    const msg = await this.chatService.saveMessage(data);
+
+    // Enviar al receptor
+    this.server.to(data.receiverId).emit('receiveMessage', msg);
+
+    // Enviar al remitente
+    this.server.to(data.senderId).emit('receiveMessage', msg);
+
+    // Marcar como entregado (al menos para el sender)
+    this.server.to(data.senderId).emit('messageDelivered', {
+      messageId: msg.id,
+      delivered: true,
+    });
+
+    return msg;
+  }
+
+  // ----------------------------------------
+  // 👁️ MARCAR MENSAJES COMO LEÍDOS
+  // ----------------------------------------
+  @SubscribeMessage('markAsRead')
+  async markAsRead(
+    @MessageBody() data: { userId: string; receiverId: string },
+  ) {
+    // userId lee los mensajes de receiverId
+    await this.chatService.markAllAsRead(data.receiverId, data.userId);
+
+    // avisar al remitente (receiver)
+    this.server.to(data.receiverId).emit('allMessagesRead', {
+      from: data.userId,
+    });
+  }
+
+  // ----------------------------------------
+  // ✏️ TYPING
+  // ----------------------------------------
+  @SubscribeMessage('typing')
+  typing(@MessageBody() data: { from: string; to: string }) {
+    this.server.to(data.to).emit('typing', { from: data.from });
+  }
+
+  @SubscribeMessage('stopTyping')
+  stopTyping(@MessageBody() data: { from: string; to: string }) {
+    this.server.to(data.to).emit('stopTyping', { from: data.from });
   }
 }
