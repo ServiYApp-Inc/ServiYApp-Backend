@@ -21,77 +21,222 @@
   <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
   [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
-## Description
+# ServiYApp Backend
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+API RESTful construida con [NestJS](https://nestjs.com/) para la gestión de servicios, usuarios, proveedores y reservas en la plataforma ServiYApp.
 
-## Project setup
+## Tabla de Contenidos
 
-```bash
-$ npm install
+- [Descripción](#descripción)
+- [Características](#características)
+- [Estructura del Proyecto](#estructura-del-proyecto)
+- [Instalación](#instalación)
+- [Configuración](#configuración)
+- [Ejecución](#ejecución)
+- [Testing](#testing)
+- [Principales Endpoints](#principales-endpoints)
+- [Módulos Destacados](#módulos-destacados)
+- [Swagger](#swagger)
+- [Licencia](#licencia)
+
+---
+
+## Descripción
+
+ServiYApp Backend es una API modular que permite:
+
+- Registro y autenticación de usuarios y proveedores.
+- Gestión de servicios, categorías y direcciones.
+- Creación y administración de órdenes de servicio.
+- Integración con Cloudinary para gestión de imágenes.
+- Notificaciones, pagos y chat en tiempo real.
+
+## Características
+
+- Arquitectura modular con NestJS y TypeORM.
+- Autenticación JWT y Google OAuth.
+- Soporte para roles (Admin, User, Provider).
+- Documentación automática con Swagger.
+- Seeds para datos iniciales.
+- Gestión de imágenes con Cloudinary.
+
+## Estructura del Proyecto
+
+```
+src/
+  app.module.ts
+  main.ts
+  config/
+  helpers/
+  modules/
+    addresses/
+    auth/
+    categories/
+    chat/
+    cloudinary/
+    locations/
+    notifications/
+    payments/
+    providers/
+    reviews/
+    seeds/
+    service-orders/
+    services/
+    users/
 ```
 
-## Compile and run the project
+Cada subcarpeta en `modules/` representa un dominio funcional de la aplicación.
+
+## Instalación
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+npm install
 ```
 
-## Run tests
+## Configuración
+
+Copia el archivo `.env` de ejemplo y configura tus variables:
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+cp example.env .development.env
 ```
 
-## Deployment
+Edita `.development.env` con tus credenciales de base de datos, Cloudinary, JWT, etc.
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+## Ejecución
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### Desarrollo
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+npm run start:dev
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### Producción
 
-## Resources
+```bash
+npm run start:prod
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+## Testing
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+```bash
+# Unit tests
+npm run test
 
-## Support
+# End-to-end tests
+npm run test:e2e
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+# Cobertura
+npm run test:cov
+```
 
-## Stay in touch
+## Principales Endpoints
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+La API sigue una estructura RESTful. Algunos ejemplos:
+
+### Autenticación
+
+- `POST /auth/register/user` — Registro de usuario.
+- `POST /auth/register/provider` — Registro de proveedor.
+- `POST /auth/login/user` — Login de usuario con email y contraseña.
+- `POST /auth/login/provider` — Login de proveedor con email y contraseña.
+- `GET /auth/google/user` — OAuth con Google para usuarios.
+- `GET /auth/google/provider` — OAuth con Google para proveedores.
+
+### Usuarios
+
+- `GET /users` — Listar todos los usuarios (solo administrador).
+- `GET /users/:id` — Obtener perfil de usuario (solo el propio usuario o administrador).
+- `PATCH /users/:id` — Actualizar perfil de usuario (solo el propio usuario o administrador).
+- `PATCH /users/:id/upload-profile` — Subir foto de perfil (solo el propio usuario o administrador).
+- `PATCH /users/complete/:id` — Completar registro tras Google (solo el propio usuario o administrador).
+- `PATCH /users/:id/reactivate` — Reactivar usuario (solo el propio usuario o administrador).
+- `DELETE /users/:id` — Eliminar (desactivar) usuario (solo el propio usuario o administrador).
+
+### Proveedores
+
+- `GET /providers` — Listar proveedores.
+- `GET /providers/:id` — Obtener perfil de proveedor (solo el propio proveedor o administrador).
+- `PATCH /providers/:id` — Actualizar proveedor (solo el propio proveedor o administrador).
+- `PATCH /providers/:id/upload-profile` — Subir foto de perfil (solo el propio proveedor o administrador).
+- `PATCH /providers/complete/:id` — Completar registro tras Google (solo el propio proveedor o administrador).
+- `PATCH /providers/:id/reactivate` — Reactivar proveedor (solo el propio proveedor o administrador).
+- `DELETE /providers/:id` — Eliminar (desactivar) proveedor (solo el propio proveedor o administrador).
+- `PATCH /providers/:id/validate` — Aprobar o rechazar documentos de un proveedor (solo admin).
+- `PATCH /providers/:id/status` — Cambiar el estado de un proveedor (solo admin).
+
+### Servicios
+ `GET /services/find-all` — Listar servicios públicos (paginado).
+- `GET /services/find/:id` — Obtener detalle de un servicio público.
+- `GET /services/find-all-by-param` — Listar servicios ordenados por parámetro (`price` o `duration`).
+- `GET /services/filtered-find` — Filtrar servicios por región, ciudad, categoría o nombre.
+- `POST /services/create` — Crear servicio (proveedor/admin, permite subir fotos).
+- `PATCH /services/update/:id` — Actualizar servicio (proveedor/admin, permite subir fotos).
+- `PATCH /services/deactivate/:id` — Desactivar servicio (proveedor/admin).
+- `PATCH /services/activate/:id` — Activar servicio (proveedor/admin).
+- `PATCH /services/status/:id` — Cambiar estado de servicio (proveedor/admin).
+- `GET /services/provider/:providerId` — Listar servicios de un proveedor (proveedor/admin).
+- `GET /services/admin/all` — Listar todos los servicios (solo admin).
+- `GET /services/pending` — Listar servicios pendientes de aprobación (solo admin).
+- `PATCH /services/approve/:id` — Aprobar servicio (solo admin).
+- `DELETE /services/delete/:id` — Eliminar servicio (solo admin).
+
+### Órdenes de Servicio
+
+- `POST /service-orders/create` — Crear orden de servicio.
+- `GET /service-orders/orders-all` — Listar todas las órdenes de servicio.
+- `GET /service-orders/provider/:providerId` — Listar órdenes de un proveedor.
+- `GET /service-orders/user/:userId` — Listar órdenes de un usuario.
+- `GET /service-orders/orders/:id` — Obtener detalle de una orden.
+- `PATCH /service-orders/:id/cancel` — Cancelar una orden.
+- `PATCH /service-orders/:id/confirm` — Confirmar una orden.
+- `PATCH /service-orders/:id/finish` — Finalizar una orden.
+
+### Direcciones
+
+- `POST /addresses` — Crear una dirección (usuario/admin).
+- `GET /addresses` — Listar todas las direcciones del usuario (usuario/admin).
+- `GET /addresses/:id` — Obtener una dirección por ID (usuario/admin).
+- `PATCH /addresses/:id` — Actualizar una dirección (usuario/admin).
+- `PATCH /addresses/deactivate/:id` — Desactivar una dirección (usuario/admin).
+- `PATCH /addresses/reactivate/:id` — Reactivar una dirección (usuario/admin).
+
+### Pagos
+
+- `POST /payments/create-preference` — Crear preferencia de pago (MercadoPago).
+- `POST /payments/webhook` — Webhook para notificaciones de MercadoPago.
+- `GET /payments/success` — Redirección/confirmación de pago exitoso.
+- `GET /payments/failure` — Redirección/confirmación de pago fallido.
+- `GET /payments/pending` — Redirección/confirmación de pago pendiente.
+
+### Notificaciones
+
+- `POST /notifications` — Crear una notificación.
+- `GET /notifications` — Listar todas las notificaciones.
+- `GET /notifications/:id` — Obtener una notificación por ID.
+- `PATCH /notifications/:id` — Actualizar una notificación.
+- `DELETE /notifications/:id` — Eliminar una notificación.
+
+## Módulos Destacados
+
+- **AuthModule**: Maneja autenticación, JWT, Google OAuth.
+- **UsersModule**: Gestión de usuarios.
+- **ProvidersModule**: Gestión de proveedores y documentos.
+- **ServicesModule**: Gestión de servicios y categorías.
+- **ServiceOrdersModule**: Gestión de órdenes de servicio.
+- **AddressesModule**: Gestión de direcciones y localización.
+- **CloudinaryModule**: Subida y gestión de imágenes.
+- **PaymentsModule**: Integración con MercadoPago.
+- **NotificationsModule**: Notificaciones push/email.
+- **ChatModule**: Chat en tiempo real entre usuarios y proveedores.
+
+## Swagger
+
+La documentación interactiva está disponible en:
+
+```
+http://localhost:3000/docs
+```
 
 ## License
 

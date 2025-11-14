@@ -36,6 +36,7 @@ export class ProvidersController {
   ) {}
 
 
+  @ApiBearerAuth()
   @Patch(':id/upload-profile')
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('file'))
@@ -73,6 +74,7 @@ export class ProvidersController {
 
   
   // Aprobar o rechazar documentos de un proveedor (solo admin)
+  @ApiBearerAuth()
   @Patch(':id/validate')
   @Roles(Role.Admin)
   async validateDocuments(
@@ -84,6 +86,7 @@ export class ProvidersController {
   }
 
   // Cambiar el estado de un proveedor (solo admin)
+  @ApiBearerAuth()
   @Patch(':id/status')
   @Roles(Role.Admin)
   async updateStatus(
