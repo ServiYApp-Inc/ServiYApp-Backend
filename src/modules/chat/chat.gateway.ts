@@ -12,9 +12,16 @@ import { Socket, Server } from 'socket.io';
 import { ChatService } from './chat.service';
 
 @WebSocketGateway({
-  cors: true,
-  transports: ['websocket'],
+  cors: {
+    origin: [
+      "http://localhost:3001",
+      "https://serviyapp-frontend.vercel.app",
+    ],
+    credentials: true,
+  },
+  transports: ["websocket"],
 })
+
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
