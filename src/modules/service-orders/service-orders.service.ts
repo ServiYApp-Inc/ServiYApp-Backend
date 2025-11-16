@@ -11,6 +11,7 @@ import { Provider } from 'src/modules/providers/entities/provider.entity';
 import { User } from 'src/modules/users/entities/user.entity';
 import { Service } from 'src/modules/services/entities/service.entity';
 import { Address } from 'src/modules/addresses/entities/address.entity';
+import { CommissionService } from '../commission/commission.service';
 @Injectable()
 export class ServiceOrdersService {
   constructor(
@@ -28,15 +29,16 @@ export class ServiceOrdersService {
 
     @InjectRepository(Address)
     private readonly addressRepository: Repository<Address>,
+
+    private readonly commissionService: CommissionService,
   ) {}
 
   async create(
     createServiceOrderDto: CreateServiceOrderDto,
   ): Promise<ServiceOrder> {
-    const { providerId, userId, serviceId, addressId, status } =
+    const { providerId, userId, serviceId, addressId, status, price } =
       createServiceOrderDto;
 
-    // Validar que las relaciones existan
     const provider = await this.providerRepository.findOne({
       where: { id: providerId },
     });
@@ -55,17 +57,24 @@ export class ServiceOrdersService {
     });
     if (!address) throw new NotFoundException('Dirección no encontrada');
 
-    // Crear la orden
+    if (!price || price <= 0) throw new BadRequestException('Precio inválido');
+
     const newOrder = this.serviceOrderRepository.create({
       provider,
       user,
       service,
       address,
+      price,
       status: status || 'pending',
     });
 
-    // Guardar en la base de datos
-    return await this.serviceOrderRepository.save(newOrder);
+    // 1. Guardar la orden
+    const savedOrder = await this.serviceOrderRepository.save(newOrder);
+
+    // 2. Crear automáticamente la comisión
+    await this.commissionService.createCommission(savedOrder);
+
+    return savedOrder;
   }
 
   async findAll(): Promise<ServiceOrder[]> {

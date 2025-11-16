@@ -15,6 +15,8 @@ import { Region } from 'src/modules/locations/entities/region.entity';
 import { City } from 'src/modules/locations/entities/city.entity';
 import { Role } from 'src/modules/auth/roles.enum';
 import { ProviderStatus } from '../enums/provider-status.enum';
+import { Commission } from 'src/modules/commission/entities/commission.entity';
+import { ProviderPayout } from 'src/modules/provider-payouts/entities/provider-payout.entity';
 
 // Entidad que representa a los proveedores registrados en el sistema.
 // Incluye datos personales, de ubicación, estado y relaciones con servicios y órdenes.
@@ -47,6 +49,9 @@ export class Provider {
   @ManyToOne(() => Country, { eager: true, nullable: true })
   @JoinColumn({ name: 'country_id' })
   country: Country | null;
+
+  @OneToMany(() => Commission, (commission) => commission.provider)
+  commissions: Commission[];
 
   @ManyToOne(() => Region, { eager: true, nullable: true })
   @JoinColumn({ name: 'region_id' })
@@ -83,4 +88,7 @@ export class Provider {
 
   @OneToMany(() => ServiceOrder, (serviceOrder) => serviceOrder.provider)
   serviceOrders: ServiceOrder[];
+
+  @OneToMany(() => ProviderPayout, (payout) => payout.provider)
+  payouts: ProviderPayout[];
 }

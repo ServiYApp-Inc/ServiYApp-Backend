@@ -13,6 +13,7 @@ import { Service } from 'src/modules/services/entities/service.entity';
 import { Address } from 'src/modules/addresses/entities/address.entity';
 import { Payment } from 'src/modules/payments/entities/payment.entity';
 import { Review } from 'src/modules/reviews/entities/review.entity';
+import { Commission } from 'src/modules/commission/entities/commission.entity';
 
 @Entity({ name: 'service_orders' })
 export class ServiceOrder {
@@ -21,6 +22,9 @@ export class ServiceOrder {
 
   @Column({ default: 'pending' })
   status: string; // pending | accepted | completed | cancelled
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  price: number;
 
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
@@ -47,4 +51,7 @@ export class ServiceOrder {
 
   @OneToMany(() => Review, (review) => review.serviceOrders)
   reviews: Review[];
+
+  @OneToMany(() => Commission, (commission) => commission.order)
+  commissions: Commission[];
 }
