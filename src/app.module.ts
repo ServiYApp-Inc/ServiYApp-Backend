@@ -21,6 +21,8 @@ import { AddressesModule } from './modules/addresses/addresses.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { ProviderDocumentsModule } from './modules/providers/provider-documents.module';
 import { ChatController } from './modules/chat/chat.controller';
+import { CommissionModule } from './modules/commission/commission.module';
+import { ProviderPayoutsModule } from './modules/provider-payouts/provider-payouts.module';
 
 @Module({
   imports: [
@@ -56,6 +58,8 @@ import { ChatController } from './modules/chat/chat.controller';
     ChatModule,
     ReviewsModule,
     ProviderDocumentsModule,
+    CommissionModule,
+    ProviderPayoutsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

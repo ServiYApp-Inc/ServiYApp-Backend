@@ -8,6 +8,7 @@ import { Provider } from '../providers/entities/provider.entity';
 import { Service } from '../services/entities/service.entity';
 import { User } from '../users/entities/user.entity';
 import { Review } from '../reviews/entities/review.entity';
+import { CommissionModule } from '../commission/commission.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { Review } from '../reviews/entities/review.entity';
       Address,
       Review,
     ]),
+    CommissionModule,
   ],
   controllers: [ServiceOrdersController],
   providers: [ServiceOrdersService],

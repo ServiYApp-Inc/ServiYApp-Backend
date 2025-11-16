@@ -12,6 +12,7 @@ import { Category } from 'src/modules/categories/entities/category.entity';
 import { ServiceStatus } from '../enums/service-status.enum';
 import { ServiceOrder } from 'src/modules/service-orders/entities/service-order.entity';
 import { on } from 'events';
+import { Commission } from 'src/modules/commission/entities/commission.entity';
 
 // Entidad que representa los servicios ofrecidos por los proveedores.
 // Incluye información básica, relación con el proveedor y su categoría.
@@ -32,7 +33,7 @@ export class Service {
   @Column({ type: 'enum', enum: ServiceStatus, default: ServiceStatus.ACTIVE })
   status: ServiceStatus;
 
-  @Column({ type: 'int' })
+  @Column({ type: 'decimal', precision: 10, scale: 2 })
   price: number;
 
   @Column({ type: 'int', nullable: true })
@@ -51,4 +52,7 @@ export class Service {
 
   @OneToMany(() => ServiceOrder, (serviceOrder) => serviceOrder.service)
   serviceOrders: ServiceOrder[];
+
+  @OneToMany(() => Commission, (commission) => commission.service)
+  commissions: Commission[];
 }
