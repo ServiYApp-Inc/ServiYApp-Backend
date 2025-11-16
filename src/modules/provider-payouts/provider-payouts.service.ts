@@ -15,11 +15,43 @@ export class ProviderPayoutsService {
   ) {}
 
   // Obtener balance pendiente del proveedor
-  async getBalance(providerId: string) {
+  async getBalancePending(providerId: string) {
     const commissions = await this.commissionRepo.find({
       where: {
         provider: { id: providerId },
         paidOut: false,
+      },
+      relations: ['order', 'service'], // ✔ Traemos todo lo necesario
+    });
+
+    const total = commissions.reduce(
+      (sum, c) => sum + Number(c.providerAmount),
+      0,
+    );
+
+    // Construimos la lista detallada
+    const details = commissions.map((c) => ({
+      commissionId: c.id,
+      orderDate: c.order?.createdAt,
+      serviceName: c.service?.name,
+      servicePrice: c.service?.price, // ← LISTO ✔
+      commissionPercentage: Number(c.percentage),
+      platformAmount: Number(c.platformAmount),
+      providerAmount: Number(c.providerAmount),
+    }));
+
+    return {
+      pendingBalance: total,
+      commissionsCount: commissions.length,
+      details, // ✔ Se envía el detalle por comisión
+    };
+  }
+
+  async getBalancePaid(providerId: string) {
+    const commissions = await this.commissionRepo.find({
+      where: {
+        provider: { id: providerId },
+        paidOut: true,
       },
       relations: ['order', 'service'], // ✔ Traemos todo lo necesario
     });

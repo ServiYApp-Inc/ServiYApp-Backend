@@ -6,9 +6,15 @@ export class ProviderPayoutsController {
   constructor(private payoutsService: ProviderPayoutsService) {}
 
   // ✔ Balance pendiente del proveedor
-  @Get('provider/:providerId/balance')
-  getBalance(@Param('providerId') providerId: string) {
-    return this.payoutsService.getBalance(providerId);
+  @Get('providerPending/:providerId/balance')
+  getBalancePending(@Param('providerId') providerId: string) {
+    return this.payoutsService.getBalancePending(providerId);
+  }
+
+  // ✔ Balance pendiente del proveedor
+  @Get('providerPaid/:providerId/balance')
+  getBalancePaid(@Param('providerId') providerId: string) {
+    return this.payoutsService.getBalancePaid(providerId);
   }
 
   // ✔ Crear payout (liquidación)
