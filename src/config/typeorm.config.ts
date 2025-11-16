@@ -16,6 +16,8 @@ import { Schedule } from 'src/modules/providers/entities/schedule.entity';
 import { ServiceOrder } from 'src/modules/service-orders/entities/service-order.entity';
 import { Service } from 'src/modules/services/entities/service.entity';
 import { Review } from 'src/modules/reviews/entities/review.entity';
+import { Commission } from 'src/modules/commission/entities/commission.entity';
+import { ProviderPayout } from 'src/modules/provider-payouts/entities/provider-payout.entity';
 
 // Detectar entorno
 const nodeEnv = process.env.NODE_ENV?.trim() || 'development';
@@ -64,6 +66,8 @@ const config: DataSourceOptions = isProduction
         ServiceOrder,
         Service,
         Review,
+        Commission,
+        ProviderPayout,
       ],
       migrations: [__dirname + '/../migrations/*{.ts,.js}'],
       logging: false,
