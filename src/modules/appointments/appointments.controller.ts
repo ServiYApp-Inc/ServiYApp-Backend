@@ -17,10 +17,10 @@ export class AppointmentsController {
     return this.appointmentsService.findByProvider(providerId);
   }
   
-  @Delete(':id')
-  async removeAppointment(@Param('id') id: string) {
-    return this.appointmentsService.remove(+id);
-  }
+  // @Delete(':id')
+  // async removeAppointment(@Param('id') id: string) {
+  //   return this.appointmentsService.remove(+id);
+  // }
 
   // @Get()
   // findAll() {
