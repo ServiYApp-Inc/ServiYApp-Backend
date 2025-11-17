@@ -69,13 +69,16 @@ export class ServicesController {
   @ApiQuery({ name: 'param', required: true, type: String })
   @ApiQuery({ name: 'page', required: false, type: String })
   @ApiQuery({ name: 'limit', required: false, type: String })
+  @ApiQuery({ name: 'country', required: false, type: String })
   findAllBy(
     @Query('param') param: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('country') country?: string,
   ) {
     return this.servicesService.findAllBy(
       param,
+      country,
       page ? +page : undefined,
       limit ? +limit : undefined,
     );
