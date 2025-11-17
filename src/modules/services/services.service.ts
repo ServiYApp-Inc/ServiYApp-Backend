@@ -182,21 +182,27 @@ export class ServicesService {
   // Ordenar por Parametro ('price' o 'duration')
   async findAllBy(
     param: string,
+    country?: string,
     page?: number,
     limit?: number,
   ): Promise<Service[]> {
-    const services = await this.serviceRepository.find({
-      relations: ['provider', 'category'],
-      order: { [param]: 'ASC' }
-    })
+    const query = this.serviceRepository
+      .createQueryBuilder('service')
+      .leftJoinAndSelect('service.provider', 'provider')
+      .leftJoinAndSelect('provider.country', 'country')
+      .leftJoinAndSelect('service.category', 'category')
+      .where('service.status = :status', { status: ServiceStatus.ACTIVE })
+      .orderBy(`service.${param}`, 'ASC');
+
+    if (country) {
+      query.andWhere('country.name = :country', { country });
+    }
 
     if (page && limit) {
-      const start = (page - 1) * limit;
-      const end = start + limit;
-      return services.slice(start, end);
-    };
+      query.skip((page - 1) * limit).take(limit);
+    }
 
-    return services;
+    return await query.getMany();
   }
 
   async filteredFind(
