@@ -17,6 +17,7 @@ import { Role } from 'src/modules/auth/roles.enum';
 import { ProviderStatus } from '../enums/provider-status.enum';
 import { Commission } from 'src/modules/commission/entities/commission.entity';
 import { ProviderPayout } from 'src/modules/provider-payouts/entities/provider-payout.entity';
+import { Appointment } from 'src/modules/appointments/entities/appointment.entity';
 
 // Entidad que representa a los proveedores registrados en el sistema.
 // Incluye datos personales, de ubicación, estado y relaciones con servicios y órdenes.
@@ -91,4 +92,7 @@ export class Provider {
 
   @OneToMany(() => ProviderPayout, (payout) => payout.provider)
   payouts: ProviderPayout[];
+
+  @OneToMany(() => Appointment, (appointment) => appointment.provider)
+  appointments: Appointment[];
 }
