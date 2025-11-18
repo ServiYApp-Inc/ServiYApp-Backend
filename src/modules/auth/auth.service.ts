@@ -535,6 +535,13 @@ export class AuthService {
     const isMatch = await bcrypt.compare(password, provider.password);
     if (!isMatch) throw new UnauthorizedException('Contraseña incorrecta');
 
+    // Si el proveedor está suspendido → bloquear acceso
+    if (provider.status === ProviderStatus.SUSPENDED) {
+      throw new UnauthorizedException(
+        'Tu cuenta está suspendida. Contacta con soporte para más información.',
+      );
+    }
+    
     // Si el proveedor fue eliminado o inactivo → reactivamos
     if ([ProviderStatus.DELETED, ProviderStatus.INACTIVE].includes(provider.status)) {
       provider.status = ProviderStatus.ACTIVE;

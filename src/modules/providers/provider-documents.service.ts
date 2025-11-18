@@ -34,11 +34,13 @@ export class ProviderDocumentsService {
       throw new BadRequestException('No se ha proporcionado ningún archivo');
     }
 
+    const isPDF = file.mimetype.includes('pdf');
+
     return new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
           folder,
-          resource_type: 'auto', // 🔹 acepta pdf, imágenes, etc.
+          resource_type: isPDF ? 'raw' : 'image', // PDF se sube como RAW para poder verse online
         },
         (error, result) => {
           if (error || !result) {
@@ -47,6 +49,18 @@ export class ProviderDocumentsService {
               new BadRequestException('Error al subir el archivo a Cloudinary'),
             );
           }
+
+          // SI ES PDF → generar URL visualizable
+          if (isPDF) {
+            const viewUrl = cloudinary.url(result.public_id, {
+              resource_type: 'raw',
+              flags: 'attachment:false', // visualizar en navegador
+            });
+
+            return resolve(viewUrl);
+          }
+
+          // imágenes normales
           resolve(result.secure_url);
         },
       );

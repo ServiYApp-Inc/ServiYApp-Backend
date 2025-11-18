@@ -9,6 +9,7 @@ import {
   Patch,
   UseGuards,
   Req,
+  ForbiddenException,
 } from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { ProviderDocumentsService } from './provider-documents.service';
@@ -77,8 +78,18 @@ export class ProviderDocumentsController {
 
 
 
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @Get(':providerId')
-  async findAll(@Param('providerId') providerId: string) {
+  async findAll(
+    @Req() req,
+    @Param('providerId') providerId: string,
+  ) {
+    // Solo el proveedor dueño o admin puede ver documentos
+    if (req.user.role === Role.Provider && req.user.id !== providerId) {
+      throw new ForbiddenException('No tienes permiso para ver estos documentos.');
+    }
+
     return this.providerDocumentsService.findAll(providerId);
   }
 
