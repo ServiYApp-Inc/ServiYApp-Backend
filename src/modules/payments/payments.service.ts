@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Payment } from './entities/payment.entity';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { ServiceOrder } from '../service-orders/entities/service-order.entity';
+import { MailerService } from '../auth/mailer.service';
 
 @Injectable()
 export class PaymentsService {
@@ -15,6 +16,7 @@ export class PaymentsService {
 
     @InjectRepository(ServiceOrder)
     private readonly serviceOrdersRepository: Repository<ServiceOrder>,
+    private readonly mailerService: MailerService,
   ) {}
 
   /**
@@ -82,6 +84,46 @@ export class PaymentsService {
     if (!payment.mpPaymentId) payment.mpPaymentId = mpPaymentId;
 
     await this.paymentsRepository.save(payment);
+
+    // Enviar correo si fue APROBADO
+    if (status === 'approved') {
+      const payerEmail =
+        payment.payerEmail ||
+        payment.serviceOrder?.user?.email ||
+        null;
+
+      if (payerEmail) {
+        await this.mailerService.sendPaymentSuccessMail(payerEmail, {
+          name: payment.serviceOrder?.user?.names || 'Usuario',
+          amount: payment.amount.toString(),
+          currency: payment.currency,
+          status: payment.status,
+          payment_method: payment.paymentMethod || 'N/A',
+          payment_type: payment.paymentType || 'N/A',
+          mp_payment_id: mpPaymentId,
+          service_order_id: payment.serviceOrder?.id,
+        });
+      }
+    }
+
+    //  Enviar correo al PROVEEDOR
+    if (status === 'approved') {
+      const provider = payment.serviceOrder?.provider;
+      const service = payment.serviceOrder?.service;
+
+      if (provider?.email) {
+        await this.mailerService.sendPaymentToProviderMail(provider.email, {
+          provider_name: provider.names,
+          service_name: service?.name || payment.description || 'Servicio',
+          amount: payment.amount.toString(),
+          currency: payment.currency,
+          status: payment.status,
+          payment_method: payment.paymentMethod || 'N/A',
+          mp_payment_id: mpPaymentId,
+          service_order_id: payment.serviceOrder.id,
+        });
+      }
+    }
 
     if (payment.serviceOrder) {
       payment.serviceOrder.status =

@@ -12,6 +12,7 @@ import {
   UseInterceptors,
   ParseUUIDPipe,
   UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -199,6 +200,26 @@ export class UsersController {
     }
 
     return this.usersService.reactivate(id);
+  }
+
+
+  @ApiBearerAuth()
+  @Patch(':id/status')
+  @Roles(Role.Admin)
+  async changeStatus(
+    @Param('id') id: string,
+    @Body('status') status: UserStatus,
+  ) {
+    if (!status) {
+      throw new BadRequestException('Debe enviar un estado válido');
+    }
+
+    const updated = await this.usersService.changeStatus(id, status);
+
+    return {
+      message: `Estado actualizado a ${status}`,
+      user: updated,
+    };
   }
 
 }

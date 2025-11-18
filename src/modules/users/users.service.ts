@@ -136,4 +136,23 @@ export class UsersService {
     return { message: 'Cuenta reactivada correctamente', user };
   }
 
+
+  async changeStatus(id: string, status: UserStatus): Promise<User> {
+    const user = await this.findOne(id);
+
+    if (!user) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    // No permitir cambiar a INCOMPLETE manualmente (opcional)
+    if (status === UserStatus.INCOMPLETE) {
+      throw new BadRequestException('No puedes asignar estado INCOMPLETE manualmente');
+    }
+
+    user.status = status;
+    await this.userRepository.save(user);
+
+    return user;
+  }
+  
 }

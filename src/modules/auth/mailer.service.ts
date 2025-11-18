@@ -150,6 +150,61 @@ constructor(private readonly configService: ConfigService) {
 
     await this.sendEmail(entity.email, subject, html, `Soporte ${this.appName}`);
   }
+
+  async sendPaymentSuccessMail(
+    email: string,
+    vars: {
+      name: string;
+      amount: string;
+      currency: string;
+      status: string;
+      payment_method: string;
+      payment_type: string;
+      mp_payment_id: string;
+      service_order_id: string;
+    },
+  ) {
+    const html = this.replaceVars(this.loadTemplate('payment-success'), {
+      ...vars,
+      appName: this.appName,
+    });
+
+    await this.sendEmail(
+      email,
+      `Pago confirmado - ${this.appName}`,
+      html,
+      this.appName,
+    );
+  }
+
+  async sendPaymentToProviderMail(
+    email: string,
+    vars: {
+      provider_name: string;
+      service_name: string;
+      amount: string;
+      currency: string;
+      status: string;
+      payment_method: string;
+      mp_payment_id: string;
+      service_order_id: string;
+    },
+  ) {
+    const html = this.replaceVars(
+      this.loadTemplate('payment-provider-notification'),
+      {
+        ...vars,
+        appName: this.appName,
+      }
+    );
+
+    await this.sendEmail(
+      email,
+      `Has recibido un nuevo pago - ${this.appName} Aliados`,
+      html,
+      `${this.appName} Aliados`,
+    );
+  }
 }
 
 

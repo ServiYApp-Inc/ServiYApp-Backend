@@ -30,7 +30,7 @@ export class ServiceOrder {
   createdAt: Date;
 
   //Creacion de las relaciones
-  @ManyToOne(() => Provider, (provider) => provider.serviceOrders)
+  @ManyToOne(() => Provider, (provider) => provider.serviceOrders, { eager: true })
   @JoinColumn({ name: 'providerId' })
   provider: Provider;
 
@@ -54,4 +54,5 @@ export class ServiceOrder {
 
   @OneToMany(() => Commission, (commission) => commission.order)
   commissions: Commission[];
+
 }
