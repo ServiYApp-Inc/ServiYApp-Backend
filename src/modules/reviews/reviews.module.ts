@@ -5,10 +5,11 @@ import { ServiceOrder } from '../../modules/service-orders/entities/service-orde
 import { ReviewsService } from './reviews.service';
 import { ReviewsController } from './reviews.controller';
 import { CloudinaryModule } from '../cloudinary/cloudinary.module';
+import { Provider } from '../providers/entities/provider.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Review, ServiceOrder]), // 👈 importante
+    TypeOrmModule.forFeature([Review, ServiceOrder, Provider]), // 👈 importante
     CloudinaryModule,
   ],
   controllers: [ReviewsController],

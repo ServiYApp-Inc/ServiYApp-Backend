@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Service } from './entities/service.entity';
@@ -23,7 +28,6 @@ export class ServicesService {
     private readonly cloudinaryService: CloudinaryService,
   ) {}
 
-
   // Ver TODOS los servicios (solo Admin)
   async findAllAdmin(): Promise<Service[]> {
     return await this.serviceRepository.find({
@@ -32,12 +36,13 @@ export class ServicesService {
     });
   }
 
-
   // Ver todos los servicios de un proveedor específico
   async findByProvider(providerId: string, user: any): Promise<Service[]> {
     // Si el usuario es proveedor, solo puede ver los suyos
     if (user.role === Role.Provider && user.id !== providerId) {
-      throw new ForbiddenException('No tienes permiso para ver estos servicios.');
+      throw new ForbiddenException(
+        'No tienes permiso para ver estos servicios.',
+      );
     }
 
     // Verificar que el proveedor exista
@@ -57,12 +62,20 @@ export class ServicesService {
     return services;
   }
 
-
   // Crear un nuevo servicio
-  async create(dto: CreateServiceDto, user: any, files?: Express.Multer.File[]): Promise<Service> {
-    const provider = user.role === Role.Admin
-      ? await this.providerRepository.findOne({ where: { id: dto.providerId } })
-      : await this.providerRepository.findOne({ where: { email: user.email } });
+  async create(
+    dto: CreateServiceDto,
+    user: any,
+    files?: Express.Multer.File[],
+  ): Promise<Service> {
+    const provider =
+      user.role === Role.Admin
+        ? await this.providerRepository.findOne({
+            where: { id: dto.providerId },
+          })
+        : await this.providerRepository.findOne({
+            where: { email: user.email },
+          });
 
     if (!provider) throw new NotFoundException('Proveedor no encontrado');
 
@@ -116,7 +129,6 @@ export class ServicesService {
   //   return await this.serviceRepository.save(service);
   // }
 
-
   // Ver todos los servicios pendientes (solo para administrador)
   async findAllPending(): Promise<Service[]> {
     const query = this.serviceRepository
@@ -135,12 +147,15 @@ export class ServicesService {
     if (!service) throw new NotFoundException('Servicio no encontrado');
 
     await this.serviceRepository.remove(service);
-    return { message: `El servicio "${service.name}" fue eliminado correctamente.` };
+    return {
+      message: `El servicio "${service.name}" fue eliminado correctamente.`,
+    };
   }
 
   // Ver todos los servicios (admin o proveedor)
   async findAllPublicPaginated(page = 1, limit = 10): Promise<Service[]> {
-    const query = this.serviceRepository.createQueryBuilder('service')
+    const query = this.serviceRepository
+      .createQueryBuilder('service')
       .leftJoinAndSelect('service.provider', 'provider')
       .leftJoinAndSelect('service.category', 'category')
       .where('service.status = :status', { status: ServiceStatus.ACTIVE })
@@ -154,14 +169,14 @@ export class ServicesService {
   // Ver todos los servicios paginados del mismo país que el usuario
   async findAllPaged(user: User, page = 1, limit = 5): Promise<Service[]> {
     if (!user?.country) {
-      throw new BadRequestException('No se pudo determinar el país del usuario.');
+      throw new BadRequestException(
+        'No se pudo determinar el país del usuario.',
+      );
     }
 
     // Si user.country es un objeto o un string, tomamos el nombre del país
     const countryName =
-      typeof user.country === 'object'
-        ? user.country.name
-        : user.country;
+      typeof user.country === 'object' ? user.country.name : user.country;
 
     const query = this.serviceRepository
       .createQueryBuilder('service')
@@ -176,8 +191,6 @@ export class ServicesService {
 
     return await query.getMany();
   }
-
-
 
   // Ordenar por Parametro ('price' o 'duration')
   async findAllBy(
@@ -206,7 +219,12 @@ export class ServicesService {
   }
 
   async filteredFind(
-    filters: { region?: string; city?: string; category?: string; serviceName?: string },
+    filters: {
+      region?: string;
+      city?: string;
+      category?: string;
+      serviceName?: string;
+    },
     page = 1,
     limit = 10,
   ): Promise<Service[]> {
@@ -219,21 +237,28 @@ export class ServicesService {
       .where('service.status = :status', { status: ServiceStatus.ACTIVE });
 
     if (filters.region) {
-      query.andWhere('region.name ILIKE :region', { region: `%${filters.region}%` });
+      query.andWhere('region.name ILIKE :region', {
+        region: `%${filters.region}%`,
+      });
     }
     if (filters.city) {
       query.andWhere('city.name ILIKE :city', { city: `%${filters.city}%` });
     }
     if (filters.category) {
-      query.andWhere('category.name ILIKE :category', { category: `%${filters.category}%` });
+      query.andWhere('category.name ILIKE :category', {
+        category: `%${filters.category}%`,
+      });
     }
     if (filters.serviceName) {
-      query.andWhere('service.name ILIKE :serviceName', { serviceName: `%${filters.serviceName}%` });
+      query.andWhere('service.name ILIKE :serviceName', {
+        serviceName: `%${filters.serviceName}%`,
+      });
     }
 
-    query.orderBy('service.createdAt', 'DESC')
-        .skip((page - 1) * limit)
-          .take(limit);
+    query
+      .orderBy('service.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit);
 
     return await query.getMany();
   }
@@ -259,7 +284,9 @@ export class ServicesService {
 
     // Verifica permisos
     if (user.role !== Role.Admin && service.provider.email !== user.email) {
-      throw new ForbiddenException('No tienes permiso para acceder a este servicio.');
+      throw new ForbiddenException(
+        'No tienes permiso para acceder a este servicio.',
+      );
     }
 
     return service;
@@ -340,7 +367,8 @@ export class ServicesService {
 
     // Subir nuevas fotos (si las hay)
     if (files?.length) {
-      const uploadedPhotos = await this.cloudinaryService.uploadServiceImages(files);
+      const uploadedPhotos =
+        await this.cloudinaryService.uploadServiceImages(files);
       // Opción 1: reemplazar todas las fotos anteriores
       // service.photos = uploadedPhotos;
 
@@ -367,7 +395,6 @@ export class ServicesService {
     return await this.serviceRepository.save(service);
   }
 
-
   // Cambiar estado (activar/desactivar o eliminar lógicamente)
   async changeStatus(
     id: string,
@@ -383,10 +410,12 @@ export class ServicesService {
   }
 
   async countByStatus(): Promise<any> {
-    const active = await this.serviceRepository.count({ where: { status: ServiceStatus.ACTIVE } });
-    const inactive = await this.serviceRepository.count({ where: { status: ServiceStatus.INACTIVE } });
+    const active = await this.serviceRepository.count({
+      where: { status: ServiceStatus.ACTIVE },
+    });
+    const inactive = await this.serviceRepository.count({
+      where: { status: ServiceStatus.INACTIVE },
+    });
     return { active, inactive };
   }
-
-
 }

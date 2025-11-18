@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Param, UploadedFiles, UseInterceptors } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  UploadedFiles,
+  UseInterceptors,
+} from '@nestjs/common';
 import { ReviewsService } from './reviews.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { FilesInterceptor } from '@nestjs/platform-express';
@@ -7,7 +15,6 @@ import { ApiConsumes } from '@nestjs/swagger';
 @Controller('reviews')
 export class ReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}
-
 
   @Post('createReviewProvider')
   @UseInterceptors(FilesInterceptor('files', 5))
@@ -23,7 +30,6 @@ export class ReviewsController {
   // createReviewProvider(@Body() dto: CreateReviewDto) {
   //   return this.reviewsService.createReviewProvider(dto);
   // }
-
 
   @Post('createReviewClient')
   @UseInterceptors(FilesInterceptor('files', 5))

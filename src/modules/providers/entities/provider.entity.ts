@@ -45,6 +45,18 @@ export class Provider {
   @Column({ type: 'varchar', nullable: false })
   password: string;
 
+  @Column({
+    type: 'decimal',
+    precision: 3,
+    scale: 1,
+    default: 0,
+    nullable: true,
+  })
+  averageRating: number;
+
+  @Column({ type: 'int', default: 0, nullable: true })
+  reviewsCount: number;
+
   // Relaciones con entidades de ubicación
   @ManyToOne(() => Country, { eager: true, nullable: true })
   @JoinColumn({ name: 'country_id' })

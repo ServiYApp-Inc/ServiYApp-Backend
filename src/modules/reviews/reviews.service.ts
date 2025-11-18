@@ -8,7 +8,8 @@ import { Repository } from 'typeorm';
 import { Review } from './entities/review.entity';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { ServiceOrder } from '../../modules/service-orders/entities/service-order.entity';
-import { CloudinaryService } from '../cloudinary/cloudinary.service'; 
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
+import { Provider } from '../providers/entities/provider.entity';
 
 @Injectable()
 export class ReviewsService {
@@ -17,25 +18,32 @@ export class ReviewsService {
     private readonly reviewRepo: Repository<Review>,
     @InjectRepository(ServiceOrder)
     private readonly orderRepo: Repository<ServiceOrder>,
+    @InjectRepository(Provider)
+    private readonly providerRepo: Repository<Provider>,
     private readonly cloudinaryService: CloudinaryService,
   ) {}
 
-
-
-    // Crear reseña para proveedor
-  async createReviewProvider(dto: CreateReviewDto, files?: Express.Multer.File[]) {
+  // Crear reseña para proveedor
+  async createReviewProvider(
+    dto: CreateReviewDto,
+    files?: Express.Multer.File[],
+  ) {
     const validCombo =
       (dto.authorUserId && dto.targetProviderId) ||
       (dto.authorProviderId && dto.targetUserId);
 
     if (!validCombo) {
-      throw new BadRequestException('Debe especificar un autor y destinatario válidos (user->provider o provider->user)');
+      throw new BadRequestException(
+        'Debe especificar un autor y destinatario válidos (user->provider o provider->user)',
+      );
     }
 
     const order = await this.orderRepo.findOne({ where: { id: dto.orderId } });
     if (!order) throw new NotFoundException('Orden no encontrada');
 
-    const existing = await this.reviewRepo.find({ where: { orderId: dto.orderId } });
+    const existing = await this.reviewRepo.find({
+      where: { orderId: dto.orderId },
+    });
 
     if (dto.authorUserId && existing.some((r) => !!r.authorUserId)) {
       throw new BadRequestException('El cliente ya calificó esta orden.');
@@ -45,16 +53,46 @@ export class ReviewsService {
       throw new BadRequestException('El proveedor ya calificó esta orden.');
     }
 
-    const photoUrl = files?.length ? await this.handlePhotoUploads(files) : dto.photoUrl || null;
+    const photoUrl = files?.length
+      ? await this.handlePhotoUploads(files)
+      : dto.photoUrl || null;
 
     const review = this.reviewRepo.create({
       ...dto,
       photoUrl: photoUrl ?? undefined,
     });
-    return await this.reviewRepo.save(review);
+
+    const savedReview = await this.reviewRepo.save(review);
+
+    // ⭐ Calcular promedio actualizado
+
+    if (!dto.targetProviderId) {
+      throw new BadRequestException(
+        'El ID del proveedor no puede ser undefined',
+      );
+    }
+    const updatedAverage = await this.getAverageRatingForProvider(
+      dto.targetProviderId,
+    );
+
+    // 🔢 Contar total de reviews del proveedor
+    const totalReviews = await this.reviewRepo.count({
+      where: { targetProviderId: dto.targetProviderId },
+    });
+
+    // 🛠 Actualizar proveedor
+    await this.providerRepo.update(dto.targetProviderId, {
+      averageRating: updatedAverage,
+      reviewsCount: totalReviews,
+    });
+
+    return {
+      message: 'Reseña creada exitosamente',
+      review: savedReview,
+      averageRating: updatedAverage,
+      reviewsCount: totalReviews,
+    };
   }
-
-
 
   // Crear reseña para proveedor
   // async createReviewProvider(dto: CreateReviewDto) {
@@ -88,26 +126,31 @@ export class ReviewsService {
   //     throw new BadRequestException('El proveedor ya calificó esta orden.');
   //   }
 
-    
-
   //   const review = this.reviewRepo.create(dto);
   //   return await this.reviewRepo.save(review);
   // }
 
- // Crear reseña para cliente
-  async createReviewClient(dto: CreateReviewDto, files?: Express.Multer.File[]) {
+  // Crear reseña para cliente
+  async createReviewClient(
+    dto: CreateReviewDto,
+    files?: Express.Multer.File[],
+  ) {
     const validCombo =
       (dto.authorUserId && dto.targetProviderId) ||
       (dto.authorProviderId && dto.targetUserId);
 
     if (!validCombo) {
-      throw new BadRequestException('Debe especificar un autor y destinatario válidos (user->provider o provider->user)');
+      throw new BadRequestException(
+        'Debe especificar un autor y destinatario válidos (user->provider o provider->user)',
+      );
     }
 
     const order = await this.orderRepo.findOne({ where: { id: dto.orderId } });
     if (!order) throw new NotFoundException('Orden no encontrada');
 
-    const existing = await this.reviewRepo.find({ where: { orderId: dto.orderId } });
+    const existing = await this.reviewRepo.find({
+      where: { orderId: dto.orderId },
+    });
 
     if (dto.authorUserId && existing.some((r) => !!r.authorUserId)) {
       throw new BadRequestException('El cliente ya calificó esta orden.');
@@ -117,7 +160,9 @@ export class ReviewsService {
       throw new BadRequestException('El proveedor ya calificó esta orden.');
     }
 
-    const photoUrl = files?.length ? await this.handlePhotoUploads(files) : dto.photoUrl || null;
+    const photoUrl = files?.length
+      ? await this.handlePhotoUploads(files)
+      : dto.photoUrl || null;
 
     const review = this.reviewRepo.create({
       ...dto,
@@ -161,7 +206,6 @@ export class ReviewsService {
   //   const review = this.reviewRepo.create(dto);
   //   return await this.reviewRepo.save(review);
   // }
-
 
   // Obtener reseñas para un proveedor
   async findByProvider(providerId: string) {
@@ -207,20 +251,18 @@ export class ReviewsService {
     return { clientReviewed, providerReviewed };
   }
 
-
   // Subir múltiples fotos
-  private async handlePhotoUploads(files?: Express.Multer.File[]): Promise<string[] | null> {
+  private async handlePhotoUploads(
+    files?: Express.Multer.File[],
+  ): Promise<string[] | null> {
     if (!files || files.length === 0) return null;
 
     const uploads = await Promise.all(
-      files.map((file) => this.cloudinaryService.uploadImage(file, 'serviyapp/reviews')),
+      files.map((file) =>
+        this.cloudinaryService.uploadImage(file, 'serviyapp/reviews'),
+      ),
     );
 
     return uploads.map((r) => r.secure_url);
   }
-
-
-
-
-
 }

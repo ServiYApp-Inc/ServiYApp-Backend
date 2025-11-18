@@ -28,7 +28,6 @@ import { FileFieldsInterceptor } from '@nestjs/platform-express';
 export class ServicesController {
   constructor(private readonly servicesService: ServicesService) {}
 
-
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.Admin)
@@ -36,9 +35,6 @@ export class ServicesController {
   async findAllAdmin() {
     return this.servicesService.findAllAdmin();
   }
-
-
-
 
   // PÚBLICOS
   @Get('find-all')
@@ -85,7 +81,7 @@ export class ServicesController {
   }
 
   // Filtrar resultados por Ciudad, Region, cCategoria y Servicio
-  // 
+  //
   @Get('filtered-find/')
   @ApiQuery({ name: 'region', required: false, type: String })
   @ApiQuery({ name: 'city', required: false, type: String })
@@ -102,9 +98,9 @@ export class ServicesController {
     @Query('limit') limit?: string,
   ) {
     return this.servicesService.filteredFind(
-    { region, city, category, serviceName },
-    page ? +page : undefined,
-    limit ? +limit : undefined
+      { region, city, category, serviceName },
+      page ? +page : undefined,
+      limit ? +limit : undefined,
     );
   }
 
@@ -112,7 +108,6 @@ export class ServicesController {
   findOne(@Param('id') id: string) {
     return this.servicesService.findOnePublic(id);
   }
-
 
   // PROTEGIDOS
 
@@ -122,7 +117,11 @@ export class ServicesController {
   @Roles(Role.Admin)
   async approveService(@Param('id') id: string, @Req() req) {
     // Cambia el estado a ACTIVE
-    return this.servicesService.changeStatus(id, req.user, ServiceStatus.ACTIVE);
+    return this.servicesService.changeStatus(
+      id,
+      req.user,
+      ServiceStatus.ACTIVE,
+    );
   }
 
   @ApiBearerAuth()
@@ -137,7 +136,7 @@ export class ServicesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('pending')
-  @Roles(Role.Admin) 
+  @Roles(Role.Admin)
   async findAllPending() {
     return this.servicesService.findAllPending();
   }
@@ -146,10 +145,7 @@ export class ServicesController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('provider/:providerId')
   @Roles(Role.Admin, Role.Provider)
-  async findByProvider(
-    @Param('providerId') providerId: string,
-    @Req() req,
-  ) {
+  async findByProvider(@Param('providerId') providerId: string, @Req() req) {
     return this.servicesService.findByProvider(providerId, req.user);
   }
 
@@ -201,7 +197,11 @@ export class ServicesController {
   @Patch('deactivate/:id')
   @Roles(Role.Provider, Role.Admin)
   deactivate(@Param('id') id: string, @Req() req) {
-    return this.servicesService.changeStatus(id, req.user, ServiceStatus.INACTIVE);
+    return this.servicesService.changeStatus(
+      id,
+      req.user,
+      ServiceStatus.INACTIVE,
+    );
   }
 
   @ApiBearerAuth()
@@ -209,7 +209,11 @@ export class ServicesController {
   @Patch('activate/:id')
   @Roles(Role.Provider, Role.Admin)
   activate(@Param('id') id: string, @Req() req) {
-    return this.servicesService.changeStatus(id, req.user, ServiceStatus.ACTIVE);
+    return this.servicesService.changeStatus(
+      id,
+      req.user,
+      ServiceStatus.ACTIVE,
+    );
   }
 
   @ApiBearerAuth()
@@ -224,5 +228,3 @@ export class ServicesController {
     return this.servicesService.changeStatus(id, req.user, status);
   }
 }
-
-
