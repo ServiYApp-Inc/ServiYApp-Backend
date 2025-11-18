@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Appointment } from './entities/appointment.entity';
@@ -15,7 +15,7 @@ export class AppointmentsService {
   ) {}
 
   async createAppointment(dto: CreateAppointmentDto): Promise<Appointment> {
-    const { providerId, scheduleId, startTime, endTime } = dto;
+    const { providerId, userId, scheduleId, startTime, endTime } = dto;
 
     const start = new Date(startTime);
     const end = new Date(endTime);
@@ -66,6 +66,7 @@ export class AppointmentsService {
     const appointment = this.appointmentRepository.create({
       provider: { id: providerId },
       schedule: { id: scheduleId },
+      user: { id: userId },
       startTime: start,
       endTime: end,
     });
@@ -77,6 +78,18 @@ export class AppointmentsService {
     return this.appointmentRepository.find({
       where: { provider: { id: providerId } },
     });
+  }
+
+  async getSchedulesById(providerId: string): Promise<Schedule[]> {
+    const schedules = await this.scheduleRepository.find({
+        where: { provider: { id: providerId } },
+    });
+  
+    if (!schedules || schedules.length === 0) {
+        throw new NotFoundException(`No se encontraron horarios para el proveedor con ID ${providerId}`);
+    }
+  
+    return schedules;
   }
 
   // findAll() {

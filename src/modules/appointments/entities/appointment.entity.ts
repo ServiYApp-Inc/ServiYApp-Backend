@@ -7,6 +7,7 @@ import {
 } from 'typeorm';
 import { Provider } from '../../providers/entities/provider.entity';
 import { Schedule } from '../../providers/entities/schedule.entity';
+import { User } from 'src/modules/users/entities/user.entity';
 
 @Entity({ name: 'appointments' })
 export class Appointment {
@@ -18,6 +19,10 @@ export class Appointment {
 
   @Column({ type: 'timestamp' })
   endTime: Date;
+
+  @ManyToOne(() => User, (user) => user.id, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'user_id' })
+  user: User;
 
   @ManyToOne(() => Provider, (provider) => provider.id, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'provider_id' })

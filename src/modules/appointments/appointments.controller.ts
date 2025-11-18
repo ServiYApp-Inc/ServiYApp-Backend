@@ -12,9 +12,14 @@ export class AppointmentsController {
     return this.appointmentsService.createAppointment(createAppointmentDto);
   }
 
-  @Get()
+  @Get('find-by-provider')
   async findByProvider(@Query('providerId') providerId: string): Promise<Appointment[]> {
     return this.appointmentsService.findByProvider(providerId);
+  }
+
+  @Get('schedules/:id')
+  async getSchedules(@Param('id') id: string) {
+    return this.appointmentsService.getSchedulesById(id);
   }
   
   // @Delete(':id')

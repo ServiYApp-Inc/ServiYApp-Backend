@@ -6,6 +6,10 @@ export class CreateAppointmentDto {
   @IsUUID()
   providerId: string;
 
+  @ApiProperty({ example: 'f8acac0a-3481-47a1-8df5-81eaac58cfee' })
+  @IsUUID()
+  userId: string;
+
   @ApiProperty({ example: '06b2d2bd-b661-4673-b38e-ae5874a1ee4b' })
   @IsUUID()
   scheduleId: string;
