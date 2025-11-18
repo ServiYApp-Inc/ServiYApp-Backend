@@ -18,6 +18,7 @@ import { Service } from 'src/modules/services/entities/service.entity';
 import { Review } from 'src/modules/reviews/entities/review.entity';
 import { Commission } from 'src/modules/commission/entities/commission.entity';
 import { ProviderPayout } from 'src/modules/provider-payouts/entities/provider-payout.entity';
+import { Appointment } from 'src/modules/appointments/entities/appointment.entity';
 
 // Detectar entorno
 const nodeEnv = process.env.NODE_ENV?.trim() || 'development';
@@ -38,7 +39,7 @@ if (!isProduction) {
   console.log('Cargando variables de entorno de Render (production)');
 }
 
-// Leer variable opcional para seed
+// Leer variable opcional para seed.
 const seedOnStart =
   process.env.SEED_ON_START?.toLowerCase() === 'true' ? true : false;
 
@@ -68,6 +69,7 @@ const config: DataSourceOptions = isProduction
         Review,
         Commission,
         ProviderPayout,
+        Appointment,
       ],
       migrations: [__dirname + '/../migrations/*{.ts,.js}'],
       logging: false,
