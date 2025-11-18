@@ -23,6 +23,7 @@ import { ProviderDocumentsModule } from './modules/providers/provider-documents.
 import { ChatController } from './modules/chat/chat.controller';
 import { CommissionModule } from './modules/commission/commission.module';
 import { ProviderPayoutsModule } from './modules/provider-payouts/provider-payouts.module';
+import { AppointmentsModule } from './modules/appointments/appointments.module';
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { ProviderPayoutsModule } from './modules/provider-payouts/provider-payou
     ProviderDocumentsModule,
     CommissionModule,
     ProviderPayoutsModule,
+    AppointmentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
