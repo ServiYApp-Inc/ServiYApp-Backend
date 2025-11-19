@@ -13,15 +13,11 @@ import { ChatService } from './chat.service';
 
 @WebSocketGateway({
   cors: {
-    origin: [
-      "http://localhost:3001",
-      "https://serviyapp-frontend.vercel.app",
-    ],
+    origin: ['http://localhost:3001', 'https://serviyapp-frontend.vercel.app'],
     credentials: true,
   },
-  transports: ["websocket"],
+  transports: ['websocket'],
 })
-
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
@@ -94,6 +90,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     // Guardar mensaje
     const msg = await this.chatService.saveMessage(data);
+    // 🟣 Notificación de mensaje nuevo
+    this.server.to(data.receiverId).emit('messageNotification', {
+      from: data.senderId,
+      content: data.content,
+      time: msg.time,
+    });
 
     // Enviar al receptor
     this.server.to(data.receiverId).emit('receiveMessage', msg);
