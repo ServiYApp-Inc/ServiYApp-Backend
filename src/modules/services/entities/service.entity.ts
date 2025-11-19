@@ -13,6 +13,7 @@ import { ServiceStatus } from '../enums/service-status.enum';
 import { ServiceOrder } from 'src/modules/service-orders/entities/service-order.entity';
 import { on } from 'events';
 import { Commission } from 'src/modules/commission/entities/commission.entity';
+import { Review } from 'src/modules/reviews/entities/review.entity';
 
 // Entidad que representa los servicios ofrecidos por los proveedores.
 // Incluye información básica, relación con el proveedor y su categoría.
@@ -55,4 +56,7 @@ export class Service {
 
   @OneToMany(() => Commission, (commission) => commission.service)
   commissions: Commission[];
+
+  @OneToMany(() => Review, (review) => review.service)
+  reviews: Review[];
 }
