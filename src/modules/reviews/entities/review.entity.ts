@@ -9,6 +9,7 @@ import {
 import { User } from '../../users/entities/user.entity';
 import { Provider } from '../../providers/entities/provider.entity';
 import { ServiceOrder } from '../../service-orders/entities/service-order.entity';
+import { Service } from 'src/modules/services/entities/service.entity';
 
 @Entity('reviews')
 export class Review {
@@ -48,6 +49,13 @@ export class Review {
   @ManyToOne(() => ServiceOrder, (serviceOrders) => serviceOrders.reviews)
   @JoinColumn({ name: 'orderId' })
   serviceOrders: ServiceOrder;
+
+  @Column({ type: 'uuid', nullable: true })
+  serviceId?: string;
+
+  @ManyToOne(() => Service, (service) => service.reviews, { nullable: true })
+  @JoinColumn({ name: 'serviceId' })
+  service?: Service;
 
   @Column()
   orderId: string;

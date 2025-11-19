@@ -16,6 +16,7 @@ import { ApiConsumes } from '@nestjs/swagger';
 export class ReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}
 
+  // Reseñas hacia un proeveedor
   @Post('createReviewProvider')
   @UseInterceptors(FilesInterceptor('files', 5))
   @ApiConsumes('multipart/form-data')
@@ -25,12 +26,7 @@ export class ReviewsController {
   ) {
     return this.reviewsService.createReviewProvider(dto, files);
   }
-
-  // @Post('createReviewProvider')
-  // createReviewProvider(@Body() dto: CreateReviewDto) {
-  //   return this.reviewsService.createReviewProvider(dto);
-  // }
-
+  // Reseñas hacia un usuario
   @Post('createReviewClient')
   @UseInterceptors(FilesInterceptor('files', 5))
   @ApiConsumes('multipart/form-data')
@@ -40,18 +36,11 @@ export class ReviewsController {
   ) {
     return this.reviewsService.createReviewClient(dto, files);
   }
-
-  // @Post('createReviewClient')
-  // createReviewClient(@Body() dto: CreateReviewDto) {
-  //   return this.reviewsService.createReviewClient(dto);
-  // }
-
   // Reseñas hacia un proveedor
   @Get('/provider/:id')
   findByProvider(@Param('id') id: string) {
     return this.reviewsService.findByProvider(id);
   }
-
   // Reseñas hacia un usuario
   @Get('/user/:id')
   findByUser(@Param('id') id: string) {
@@ -73,5 +62,16 @@ export class ReviewsController {
   @Get('/order/:orderId/validate')
   validateReview(@Param('orderId') orderId: string) {
     return this.reviewsService.validateReviewStatus(orderId);
+  }
+
+  @Get('/provider/:providerId/service/:serviceId/reviews')
+  getReviewsByProviderAndService(
+    @Param('providerId') providerId: string,
+    @Param('serviceId') serviceId: string,
+  ) {
+    return this.reviewsService.getReviewsByProviderAndService(
+      providerId,
+      serviceId,
+    );
   }
 }

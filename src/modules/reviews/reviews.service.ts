@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Not, Repository } from 'typeorm';
 import { Review } from './entities/review.entity';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { ServiceOrder } from '../../modules/service-orders/entities/service-order.entity';
@@ -23,11 +23,16 @@ export class ReviewsService {
     private readonly cloudinaryService: CloudinaryService,
   ) {}
 
-  // Crear reseña para proveedor
+  // ⭐ Crear reseña hacia proveedor
   async createReviewProvider(
     dto: CreateReviewDto,
     files?: Express.Multer.File[],
   ) {
+    // ⭐ Validar que venga el ID del servicio
+    if (!dto.serviceId) {
+      throw new BadRequestException('El ID del servicio es obligatorio.');
+    }
+
     const validCombo =
       (dto.authorUserId && dto.targetProviderId) ||
       (dto.authorProviderId && dto.targetUserId);
@@ -57,25 +62,27 @@ export class ReviewsService {
       ? await this.handlePhotoUploads(files)
       : dto.photoUrl || null;
 
+    // ⭐ Aquí ya se guarda serviceId automáticamente
     const review = this.reviewRepo.create({
       ...dto,
+      serviceId: dto.serviceId,
       photoUrl: photoUrl ?? undefined,
     });
 
     const savedReview = await this.reviewRepo.save(review);
 
     // ⭐ Calcular promedio actualizado
-
     if (!dto.targetProviderId) {
       throw new BadRequestException(
         'El ID del proveedor no puede ser undefined',
       );
     }
+
     const updatedAverage = await this.getAverageRatingForProvider(
       dto.targetProviderId,
     );
 
-    // 🔢 Contar total de reviews del proveedor
+    // 🔢 Contar total de reviews
     const totalReviews = await this.reviewRepo.count({
       where: { targetProviderId: dto.targetProviderId },
     });
@@ -94,47 +101,16 @@ export class ReviewsService {
     };
   }
 
-  // Crear reseña para proveedor
-  // async createReviewProvider(dto: CreateReviewDto) {
-  //   // Validar combinación de autor y destinatario
-  //   const validCombo =
-  //     (dto.authorUserId && dto.targetProviderId) ||
-  //     (dto.authorProviderId && dto.targetUserId);
-
-  //   if (!validCombo) {
-  //     throw new BadRequestException(
-  //       'Debe especificar un autor y destinatario válidos (user->provider o provider->user)',
-  //     );
-  //   }
-
-  //   const order = await this.orderRepo.findOne({ where: { id: dto.orderId } });
-  //   if (!order) throw new NotFoundException('Orden no encontrada');
-
-  //   //Validar si ya existe review
-  //   const existingReviews = await this.reviewRepo.find({
-  //     where: { orderId: dto.orderId },
-  //   });
-
-  //   if (dto.authorUserId && existingReviews.some((r) => !!r.authorUserId)) {
-  //     throw new BadRequestException('El cliente ya calificó esta orden.');
-  //   }
-
-  //   if (
-  //     dto.authorProviderId &&
-  //     existingReviews.some((r) => !!r.authorProviderId)
-  //   ) {
-  //     throw new BadRequestException('El proveedor ya calificó esta orden.');
-  //   }
-
-  //   const review = this.reviewRepo.create(dto);
-  //   return await this.reviewRepo.save(review);
-  // }
-
-  // Crear reseña para cliente
+  // ⭐ Crear reseña hacia cliente
   async createReviewClient(
     dto: CreateReviewDto,
     files?: Express.Multer.File[],
   ) {
+    // ⭐ Validar serviceId
+    if (!dto.serviceId) {
+      throw new BadRequestException('El ID del servicio es obligatorio.');
+    }
+
     const validCombo =
       (dto.authorUserId && dto.targetProviderId) ||
       (dto.authorProviderId && dto.targetUserId);
@@ -168,76 +144,48 @@ export class ReviewsService {
       ...dto,
       photoUrl: photoUrl ?? undefined,
     });
+
     return await this.reviewRepo.save(review);
   }
 
-  // Crear reseña para cliente
-  // async createReviewClient(dto: CreateReviewDto) {
-  //   // Validar combinación de autor y destinatario
-  //   const validCombo =
-  //     (dto.authorUserId && dto.targetProviderId) ||
-  //     (dto.authorProviderId && dto.targetUserId);
-
-  //   if (!validCombo) {
-  //     throw new BadRequestException(
-  //       'Debe especificar un autor y destinatario válidos (user->provider o provider->user)',
-  //     );
-  //   }
-
-  //   const order = await this.orderRepo.findOne({ where: { id: dto.orderId } });
-  //   if (!order) throw new NotFoundException('Orden no encontrada');
-
-  //   //Validar si ya existe review
-  //   const existingReviews = await this.reviewRepo.find({
-  //     where: { orderId: dto.orderId },
-  //   });
-
-  //   if (dto.authorUserId && existingReviews.some((r) => !!r.authorUserId)) {
-  //     throw new BadRequestException('El cliente ya calificó esta orden.');
-  //   }
-
-  //   if (
-  //     dto.authorProviderId &&
-  //     existingReviews.some((r) => !!r.authorProviderId)
-  //   ) {
-  //     throw new BadRequestException('El proveedor ya calificó esta orden.');
-  //   }
-
-  //   const review = this.reviewRepo.create(dto);
-  //   return await this.reviewRepo.save(review);
-  // }
-
-  // Obtener reseñas para un proveedor
+  // ⭐ Obtener reseñas de un proveedor
   async findByProvider(providerId: string) {
     return await this.reviewRepo.find({
       where: { targetProviderId: providerId },
-      relations: ['authorUser', 'serviceOrders'],
+      relations: ['authorUser', 'serviceOrders', 'service'], // 👈 Incluye servicio
       order: { createdAt: 'DESC' },
     });
   }
-  // Obtener reseñas para un usuario
+
+  // ⭐ Obtener reseñas de un usuario
   async findByUser(userId: string) {
     return await this.reviewRepo.find({
       where: { targetUserId: userId },
-      relations: ['authorProvider', 'serviceOrders'],
+      relations: ['authorProvider', 'serviceOrders', 'service'], // 👈 Incluye servicio
       order: { createdAt: 'DESC' },
     });
   }
-  // Calificación promedio para un proveedor
+
+  // ⭐ Calcular promedio proveedor
   async getAverageRatingForProvider(providerId: string) {
     const reviews = await this.reviewRepo.find({
       where: { targetProviderId: providerId },
     });
+
     if (!reviews.length) return 0;
+
     const sum = reviews.reduce((acc, r) => acc + r.rating, 0);
     return Number((sum / reviews.length).toFixed(1));
   }
-  // Calificación promedio para un usuario
+
+  // ⭐ Calcular promedio usuario
   async getAverageRatingForUser(userId: string) {
     const reviews = await this.reviewRepo.find({
       where: { targetUserId: userId },
     });
+
     if (!reviews.length) return 0;
+
     const sum = reviews.reduce((acc, r) => acc + r.rating, 0);
     return Number((sum / reviews.length).toFixed(1));
   }
@@ -251,7 +199,42 @@ export class ReviewsService {
     return { clientReviewed, providerReviewed };
   }
 
-  // Subir múltiples fotos
+  async getReviewsByProviderAndService(providerId: string, serviceId: string) {
+    const reviews = await this.reviewRepo.find({
+      where: {
+        targetProviderId: providerId,
+        service: { id: serviceId },
+        authorUserId: Not(IsNull()),
+      },
+      relations: ['service'], // trae el servicio para acceder al nombre
+      select: {
+        rating: true,
+        comment: true,
+        photoUrl: true,
+        createdAt: true,
+        service: { name: true }, // solo el nombre del servicio
+      },
+      order: { createdAt: 'DESC' },
+    });
+
+    if (!reviews.length) {
+      return {
+        message: 'Aún no hay reviews para este servicio y proveedor',
+        reviews: [],
+      };
+    }
+
+    // Transformación segura FINAL
+    return reviews.map((r) => ({
+      rating: r.rating,
+      comment: r.comment,
+      photoUrl: r.photoUrl,
+      createdAt: r.createdAt,
+      serviceName: r.service?.name ?? null, // <-- SEGURO
+    }));
+  }
+
+  // ⭐ Subir múltiples fotos
   private async handlePhotoUploads(
     files?: Express.Multer.File[],
   ): Promise<string[] | null> {
