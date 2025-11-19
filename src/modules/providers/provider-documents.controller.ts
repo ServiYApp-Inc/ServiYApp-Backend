@@ -30,6 +30,20 @@ export class ProviderDocumentsController {
 
 
 
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Get('me')
+  async getMyDocuments(@Req() req) {
+    if (req.user.role !== Role.Provider) {
+      throw new ForbiddenException('Solo los proveedores pueden ver esta ruta.');
+    }
+
+    return this.providerDocumentsService.findAll(req.user.id);
+  }
+
+
+
     // LISTAR DOCUMENTOS PENDIENTES
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)

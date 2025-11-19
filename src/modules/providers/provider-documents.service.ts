@@ -54,7 +54,9 @@ export class ProviderDocumentsService {
           if (isPDF) {
             const viewUrl = cloudinary.url(result.public_id, {
               resource_type: 'raw',
-              flags: 'attachment:false', // visualizar en navegador
+              type: 'upload',
+              format: 'pdf', // Fuerza extensión y MIME correcto
+              secure: true,
             });
 
             return resolve(viewUrl);
