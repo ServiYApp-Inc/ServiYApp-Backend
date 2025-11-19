@@ -52,14 +52,9 @@ export class ProviderDocumentsService {
 
           // SI ES PDF → generar URL visualizable
           if (isPDF) {
-            const viewUrl = cloudinary.url(result.public_id, {
-              resource_type: 'raw',
-              type: 'upload',
-              format: 'pdf', // Fuerza extensión y MIME correcto
-              secure: true,
-            });
+            const finalUrl = result.secure_url + '#.pdf';
 
-            return resolve(viewUrl);
+            return resolve(finalUrl);
           }
 
           // imágenes normales
