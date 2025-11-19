@@ -47,6 +47,18 @@ export class ServicesController {
     return this.servicesService.findAllPublicPaginated(page, limit);
   }
 
+  @Get('find-all-by-country')
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'country', required: false, type: String })
+  async findAllByCountry(
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+    @Query('country') country: string,
+  ) {
+    return this.servicesService.findAllByCountry(page, limit, country);
+  }
+
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Get('find-all-paged')

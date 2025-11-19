@@ -166,6 +166,21 @@ export class ServicesService {
     return await query.getMany();
   }
 
+  async findAllByCountry(page = 1, limit = 10, country): Promise<Service[]> {
+    const query = this.serviceRepository
+      .createQueryBuilder('service')
+      .leftJoinAndSelect('service.provider', 'provider')
+      .leftJoinAndSelect('provider.country', 'country')
+      .leftJoinAndSelect('service.category', 'category')
+      .where('service.status = :status', { status: ServiceStatus.ACTIVE })
+      .andWhere('country.name = :country', { country })
+      .orderBy('service.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    return await query.getMany();
+  }
+
   // Ver todos los servicios paginados del mismo país que el usuario
   async findAllPaged(user: User, page = 1, limit = 5): Promise<Service[]> {
     if (!user?.country) {
