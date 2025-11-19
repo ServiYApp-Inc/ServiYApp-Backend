@@ -34,30 +34,24 @@ export class ProviderDocumentsService {
       throw new BadRequestException('No se ha proporcionado ningún archivo');
     }
 
-    const isPDF = file.mimetype.includes('pdf');
+    if (!file.mimetype.startsWith('image/')) {
+      throw new BadRequestException('Solo se permiten imágenes.');
+    }
 
     return new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
           folder,
-          resource_type: isPDF ? 'raw' : 'image', // PDF se sube como RAW para poder verse online
+          resource_type: 'image', // 👈 SIEMPRE IMAGEN
+          use_filename: true,
+          unique_filename: true,
         },
         (error, result) => {
           if (error || !result) {
             console.error('Cloudinary upload error:', error);
-            return reject(
-              new BadRequestException('Error al subir el archivo a Cloudinary'),
-            );
+            return reject(new BadRequestException('Error al subir la imagen a Cloudinary'));
           }
 
-          // SI ES PDF → generar URL visualizable
-          if (isPDF) {
-            const finalUrl = result.secure_url + '#.pdf';
-
-            return resolve(finalUrl);
-          }
-
-          // imágenes normales
           resolve(result.secure_url);
         },
       );
@@ -94,14 +88,14 @@ export class ProviderDocumentsService {
     document.bank = dto.bank || null;
     document.status = DocumentStatus.PENDING;
 
-    // Archivo principal (PDF)
+    // Archivo principal (imagen)
     if (files.file?.[0]) {
-      const pdf = files.file[0];
-      if (!pdf.mimetype.includes('pdf')) {
-        throw new BadRequestException('El archivo principal debe ser un PDF');
+      const image = files.file[0];
+      if (!image.mimetype.startsWith('image/')) {
+        throw new BadRequestException('El archivo principal debe ser una imagen');
       }
       document.file = await this.uploadToCloudinary(
-        pdf,
+        image,
         'serviyapp/providers/documents',
       );
     }
@@ -118,11 +112,11 @@ export class ProviderDocumentsService {
       );
     }
 
-    // Soporte bancario (PDF)
+    // Soporte bancario (imagen)
     if (files.accountFile?.[0]) {
       const acc = files.accountFile[0];
-      if (!acc.mimetype.includes('pdf')) {
-        throw new BadRequestException('El soporte bancario debe ser un PDF');
+      if (!acc.mimetype.startsWith('image/')) {
+        throw new BadRequestException('El soporte bancario debe ser una imagen');
       }
       document.accountFile = await this.uploadToCloudinary(
         acc,
