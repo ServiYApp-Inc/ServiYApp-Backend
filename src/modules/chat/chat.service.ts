@@ -143,4 +143,18 @@ export class ChatService {
       { read: true, delivered: true },
     );
   }
+
+  async deleteConversation(userId: string, providerId: string) {
+    await this.messageRepo.delete({
+      senderId: userId,
+      receiverId: providerId,
+    });
+
+    await this.messageRepo.delete({
+      senderId: providerId,
+      receiverId: userId,
+    });
+
+    return { success: true };
+  }
 }
